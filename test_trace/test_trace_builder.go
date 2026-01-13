@@ -124,7 +124,7 @@ func NewTestingTraceBuilder(t *testing.T) *TraceBuilder {
 func NewTraceBuilderWithErrorHandler(err func(error)) *TraceBuilder {
 	return &TraceBuilder{
 		err: err,
-		trace: trace.NewTrace[time.Duration, StringPayload, StringPayload, StringPayload](
+		trace: trace.NewTrace(
 			trace.DurationComparator,
 			&stringTraceNamer{},
 		),
@@ -235,7 +235,9 @@ func (tb *TraceBuilder) WithSuspend(
 		tb.err(fmt.Errorf("can't add suspend: exactly one span must match the path '%s' (got %d)", strings.Join(pathEls, "/"), len(spans)))
 		return tb
 	}
-	spans[0].Suspend(tb.trace.Comparator(), start, end, opts...)
+	if err := spans[0].Suspend(tb.trace.Comparator(), start, end, opts...); err != nil {
+		tb.err(fmt.Errorf("can't add suspend to span at path '%s': %w", strings.Join(pathEls, "/"), err))
+	}
 	return tb
 }
 

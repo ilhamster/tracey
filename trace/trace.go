@@ -54,7 +54,7 @@ func NewTrace[T any, CP, SP, DP fmt.Stringer](
 	comparator Comparator[T],
 	defaultNamer Namer[T, CP, SP, DP],
 ) Trace[T, CP, SP, DP] {
-	return NewMutableTrace[T, CP, SP, DP](comparator, defaultNamer)
+	return NewMutableTrace(comparator, defaultNamer)
 }
 
 // NewMutableTrace returns a new MutableTrace with the provided Comparator and
@@ -124,12 +124,12 @@ func (t *trace[T, CP, SP, DP]) NewRootSpan(start, end T, payload SP) RootSpan[T,
 		parentCategoriesByHierarchyType: map[HierarchyType]Category[T, CP, SP, DP]{},
 	}
 	t.rootSpans = append(t.rootSpans, ret)
-	ret.elementarySpans = append(ret.elementarySpans, makeInitialElementarySpan[T, CP, SP, DP](ret))
+	ret.elementarySpans = append(ret.elementarySpans, makeInitialElementarySpan(ret))
 	return ret
 }
 
 func (t *trace[T, CP, SP, DP]) NewMutableRootSpan(elementarySpans []MutableElementarySpan[T, CP, SP, DP], payload SP) (MutableRootSpan[T, CP, SP, DP], error) {
-	cs, err := newMutableCommonSpan[T, CP, SP, DP](elementarySpans, payload)
+	cs, err := newMutableCommonSpan(elementarySpans, payload)
 	if err != nil {
 		return nil, err
 	}
@@ -167,8 +167,7 @@ func (c *category[T, CP, SP, DP]) AddRootSpan(rs RootSpan[T, CP, SP, DP]) error 
 		return fmt.Errorf("can't add root span to category: the span already has a parent category under that hierarchy")
 	}
 	c.rootSpans = append(c.rootSpans, rs)
-	rs.(*rootSpan[T, CP, SP, DP]).setParentCategory(c)
-	return nil
+	return rs.(*rootSpan[T, CP, SP, DP]).setParentCategory(c)
 }
 
 func (c *category[T, CP, SP, DP]) HierarchyType() HierarchyType {
@@ -780,7 +779,7 @@ func (cs *commonSpan[T, CP, SP, DP]) newChildSpan(
 	child := &nonRootSpan[T, CP, SP, DP]{
 		commonSpan: newCommonSpan[T, CP, SP, DP](start, end, payload),
 	}
-	child.elementarySpans = append(child.elementarySpans, makeInitialElementarySpan[T, CP, SP, DP](child))
+	child.elementarySpans = append(child.elementarySpans, makeInitialElementarySpan(child))
 	call := &dependency[T, CP, SP, DP]{
 		dependencyType: Call,
 		options:        DefaultDependencyOptions,
@@ -906,10 +905,6 @@ func (rs *rootSpan[T, CP, SP, DP]) setParentCategory(parentCategory Category[T, 
 	}
 	rs.parentCategoriesByHierarchyType[parentCategory.HierarchyType()] = parentCategory
 	return nil
-}
-
-func (rs *rootSpan[T, CP, SP, DP]) setParentSpan(child MutableSpan[T, CP, SP, DP]) {
-	panic("cannot set parent span of a root span")
 }
 
 // Implements MutableDependency[T, CP, SP, DP]
@@ -1172,11 +1167,6 @@ type elementarySpan[T any, CP, SP, DP fmt.Stringer] struct {
 // ends.
 func (es *elementarySpan[T, CP, SP, DP]) contains(comparator Comparator[T], at T) bool {
 	return comparator.GreaterOrEqual(at, es.start) && comparator.LessOrEqual(at, es.end)
-}
-
-// Returns true if the receiver ends after the provided point
-func (es *elementarySpan[T, CP, SP, DP]) endsAfter(comparator Comparator[T], at T) bool {
-	return comparator.Less(at, es.end)
 }
 
 func (es *elementarySpan[T, CP, SP, DP]) Span() Span[T, CP, SP, DP] {

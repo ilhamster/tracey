@@ -214,7 +214,7 @@ func (g globstar) isGlobstar() bool {
 }
 
 func (g globstar) String() string {
-	return fmt.Sprintf("<globstar>")
+	return "<globstar>"
 }
 
 // Globstar is a globstar matcher, matching any number of path elements.
@@ -239,7 +239,7 @@ func (s star) isGlobstar() bool {
 }
 
 func (s star) String() string {
-	return fmt.Sprintf("<star>")
+	return "<star>"
 }
 
 // Star is a star matcher, matching any single path element.
@@ -524,7 +524,7 @@ type spanFinder[T any, CP, SP, DP fmt.Stringer] struct {
 }
 
 func (sf *spanFinder[T, CP, SP, DP]) FindSpans() []Span[T, CP, SP, DP] {
-	var ret []Span[T, CP, SP, DP]
+	var ret = []Span[T, CP, SP, DP]{}
 	for _, matcher := range sf.sp.matchers {
 		ret = append(
 			ret,
@@ -561,7 +561,7 @@ func (sf *spanFinder[T, CP, SP, DP]) FindCategories(
 	for _, opt := range opts {
 		opt(fco)
 	}
-	var ret []Category[T, CP, SP, DP]
+	var ret = []Category[T, CP, SP, DP]{}
 	if sf.spanFilter != nil {
 		// SpanFinders with applied span filters cannot find categories.
 		return ret

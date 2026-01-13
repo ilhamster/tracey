@@ -120,10 +120,7 @@ func NewSpawningForest[T any, CP, SP, DP fmt.Stringer](
 		SpawnersBySpawnedRootSpan: map[trace.RootSpan[T, CP, SP, DP]]trace.Span[T, CP, SP, DP]{},
 		SpawnedRootSpansBySpawner: map[trace.Span[T, CP, SP, DP]][]trace.RootSpan[T, CP, SP, DP]{},
 	}
-	var visit func(
-		rs trace.RootSpan[T, CP, SP, DP],
-	) error
-	visit = func(
+	var visit = func(
 		rs trace.RootSpan[T, CP, SP, DP],
 	) error {
 		seenFirstIncoming := false

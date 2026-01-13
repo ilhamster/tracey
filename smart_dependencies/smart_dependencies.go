@@ -454,7 +454,7 @@ func (sd *SmartDependencies[ID, T, CP, SP, DP]) NewUnindexed(
 	payload DP,
 	options Option,
 ) SmartDependency[T, CP, SP, DP] {
-	dep := new[ID, T, CP, SP, DP](dependencyType, payload, options)
+	dep := new[ID, T, CP, SP](dependencyType, payload, options)
 	sd.unindexedDeps = append(sd.unindexedDeps, dep)
 	sd.depsInDefinitionOrder = append(sd.depsInDefinitionOrder, dep)
 	return dep
@@ -478,7 +478,7 @@ func (sd *SmartDependencies[ID, T, CP, SP, DP]) GetIndexed(
 	}
 	dep, ok = depsByID[id]
 	if !ok {
-		dep = newWithID[ID, T, CP, SP, DP](dependencyType, payload, id, options)
+		dep = newWithID[ID, T, CP, SP](dependencyType, payload, id, options)
 		created = true
 		sd.depsInDefinitionOrder = append(sd.depsInDefinitionOrder, dep)
 		depsByID[id] = dep
@@ -513,7 +513,7 @@ func (sd *SmartDependencies[ID, T, CP, SP, DP]) CloseWithMetrics() (*Metrics[T, 
 		sd.indexedDepsByTypeAndID = map[trace.DependencyType]map[ID]SmartDependency[T, CP, SP, DP]{}
 		sd.unindexedDeps = nil
 	}()
-	metrics := newMetrics[T, CP, SP, DP](sd.t.DefaultNamer())
+	metrics := newMetrics(sd.t.DefaultNamer())
 	for _, dep := range sd.depsInDefinitionOrder {
 		if err := dep.close(sd.t, metrics); err != nil {
 			return nil, err

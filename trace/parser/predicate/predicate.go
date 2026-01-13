@@ -152,7 +152,7 @@ func getSelfSuspendedDuration[T any, CP, SP, DP fmt.Stringer](
 	span trace.Span[T, CP, SP, DP],
 ) float64 {
 	var ret float64
-	var last T = span.Start()
+	var last = span.Start()
 	for _, es := range span.ElementarySpans() {
 		ret += comparator.Diff(es.Start(), last)
 		last = es.End()
@@ -225,7 +225,7 @@ func spanFilterFromComparatorPredicate[T any, CP, SP, DP fmt.Stringer](
 }
 
 func spanFilterFromLogicalPredicate[T any, CP, SP, DP fmt.Stringer](
-	comparator trace.Comparator[T],
+	_ trace.Comparator[T],
 	logicalOperator logicalOperator,
 	leftFn, rightFn trace.SpanFilter[T, CP, SP, DP],
 ) (trace.SpanFilter[T, CP, SP, DP], error) {
@@ -277,7 +277,7 @@ func BuildSpanFilter[T any, CP, SP, DP fmt.Stringer](
 		if err != nil {
 			return nil, err
 		}
-		return spanFilterFromLogicalPredicate[T, CP, SP, DP](
+		return spanFilterFromLogicalPredicate(
 			comparator,
 			predicate.logicalOperator,
 			leftFn, rightFn,

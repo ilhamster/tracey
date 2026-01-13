@@ -170,7 +170,7 @@ func newLexer(input string) (*lexer.Lexer[*result, *yySymType], error) {
 	//     parentheses);
 	//   * All characters up to but not including the first unescaped semicolon
 	//     or the end of the input.
-	return lexer.New[*result, *yySymType](
+	return lexer.New[*result](
 		[]lexer.TokenConsumerFn[*yySymType]{
 			lexer.PrefixTreeConsumer(ptr, setStr),
 			consumeParenthesizedString,

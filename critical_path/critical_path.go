@@ -232,10 +232,31 @@ func FindBetweenEndpoints[T any, CP, SP, DP fmt.Stringer](
 	return path, nil
 }
 
+type PathElement[T any, CP, SP, DP fmt.Stringer] interface {
+	Start() T
+	End() T
+	Span() trace.Span[T, CP, SP, DP]
+	Marks() []trace.Mark[T]
+}
+
 // Path represents a single critical path.
 type Path[T any, CP, SP, DP fmt.Stringer] struct {
 	Start, End   T
-	CriticalPath []trace.ElementarySpan[T, CP, SP, DP]
+	CriticalPath []PathElement[T, CP, SP, DP]
+}
+
+// ElementarySpans returns a slice of elementary spans representing the
+// receiver, or an error that conversion was not possible.
+func (p *Path[T, CP, SP, DP]) ElementarySpans() ([]trace.ElementarySpan[T, CP, SP, DP], error) {
+	ess := make([]trace.ElementarySpan[T, CP, SP, DP], len(p.CriticalPath))
+	var ok bool
+	for idx, pe := range p.CriticalPath {
+		ess[idx], ok = pe.(trace.ElementarySpan[T, CP, SP, DP])
+		if !ok {
+			return nil, fmt.Errorf("path element %d is not an ElementarySpan", idx)
+		}
+	}
+	return ess, nil
 }
 
 // FindMarkers returns all markers matching the provided regexp in any
@@ -271,19 +292,19 @@ func findBetweenElementarySpans[T any, CP, SP, DP fmt.Stringer](
 	strategy Strategy,
 	opts *options,
 ) (*Path[T, CP, SP, DP], error) {
-	var cp []trace.ElementarySpan[T, CP, SP, DP]
+	var cp []PathElement[T, CP, SP, DP]
 	var err error
 	switch strategy {
 	case PreferCausal, PreferPredecessor, PreferMostProximate, PreferLeastProximate:
-		cp, err = greedyFind[T, CP, SP, DP](
+		cp, err = greedyFind(
 			tr.Comparator(), strategy, opts, origin, destination,
 		)
 	case PreferMostWork, PreferLeastWork:
-		cp, err = exactFind[T, CP, SP, DP](
+		cp, err = exactFind(
 			tr, strategy, opts, origin, destination,
 		)
 	case PreferTemporalMostWork:
-		cp, err = nonCausalExactFind[T, CP, SP, DP](tr, origin, destination)
+		cp, err = nonCausalExactFind(tr, origin, destination)
 	default:
 		err = fmt.Errorf("unsupported critical path strategy")
 	}
@@ -310,7 +331,7 @@ func greedyFind[T any, CP, SP, DP fmt.Stringer](
 	strategy Strategy,
 	opts *options,
 	origin, destination trace.ElementarySpan[T, CP, SP, DP],
-) ([]trace.ElementarySpan[T, CP, SP, DP], error) {
+) ([]PathElement[T, CP, SP, DP], error) {
 	// A step in the critical path search.
 	type step struct {
 		// The event at this step
@@ -336,7 +357,7 @@ func greedyFind[T any, CP, SP, DP fmt.Stringer](
 		// Walk forward along `successor_pos` links to build this path.
 		if thisStep.elementarySpan == origin {
 			cur := thisPos
-			var rev []trace.ElementarySpan[T, CP, SP, DP]
+			var rev []PathElement[T, CP, SP, DP]
 			for cur >= 0 {
 				rev = append(rev, steps[cur].elementarySpan)
 				cur = steps[cur].successorPos
@@ -531,7 +552,7 @@ func exactFind[T any, CP, SP, DP fmt.Stringer](
 	strategy Strategy,
 	opts *options,
 	origin, destination trace.ElementarySpan[T, CP, SP, DP],
-) ([]trace.ElementarySpan[T, CP, SP, DP], error) {
+) ([]PathElement[T, CP, SP, DP], error) {
 	// Find all ElementarySpan lying on any path between 'from' and 'to'.
 	onPath := FindAllCausallyReachableElementarySpansBetween(tr.Comparator(), opts.includePositiveNontriggeringOrigins, origin, destination)
 	// Returns true if the provided ElementarySpan is on a path between origin
@@ -692,7 +713,7 @@ func exactFind[T any, CP, SP, DP fmt.Stringer](
 		}
 	}
 	// Working backwards from the destination's esState, construct the best path.
-	var path []trace.ElementarySpan[T, CP, SP, DP]
+	var path []PathElement[T, CP, SP, DP]
 	cursor := getESState(destination)
 	for {
 		if cursor == nil {
@@ -830,7 +851,7 @@ func longestPath[T any, CP, SP, DP fmt.Stringer](
 func nonCausalExactFind[T any, CP, SP, DP fmt.Stringer](
 	tr trace.Trace[T, CP, SP, DP],
 	origin, destination trace.ElementarySpan[T, CP, SP, DP],
-) ([]trace.ElementarySpan[T, CP, SP, DP], error) {
+) ([]PathElement[T, CP, SP, DP], error) {
 	// Returns true if oes ends before or at the time that des starts.
 	happensBefore := func(oes trace.ElementarySpan[T, CP, SP, DP], des trace.ElementarySpan[T, CP, SP, DP]) bool {
 		if oes == nil || des == nil || oes == des {
@@ -892,7 +913,7 @@ func nonCausalExactFind[T any, CP, SP, DP fmt.Stringer](
 	cursor := longestPath(origin, destination, tr.Comparator(), visited, adj)
 
 	// Working forwards from the origin's nonCausalEsState, construct the best path.
-	var path []trace.ElementarySpan[T, CP, SP, DP]
+	var path []PathElement[T, CP, SP, DP]
 	cpWorkDuration := 0.0
 	currentTime := cursor.es.Start()
 	for {

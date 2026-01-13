@@ -49,7 +49,7 @@ func (tu *testUnserializer) DefaultNamer() trace.Namer[time.Duration, StringPayl
 var TestUnserializer = &testUnserializer{}
 
 // TPP is a test prettyprinter usable with the Traces defined in this file.
-var TPP = NewPrettyPrinter[time.Duration, StringPayload, StringPayload, StringPayload](TestNamer)
+var TPP = NewPrettyPrinter(TestNamer)
 
 // Paths returns the provided variadic set of strings as a string slice.
 func Paths(strs ...string) []string {

@@ -99,7 +99,7 @@ a/b/c 20ns-30ns @20ns`,
 					fmt.Sprintf(
 						"%s %v-%v @%v",
 						strings.Join(
-							GetSpanDisplayPath[time.Duration, payload, payload, payload](
+							GetSpanDisplayPath(
 								esp.ElementarySpan.Span(),
 								&testNamer{},
 							),

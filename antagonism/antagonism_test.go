@@ -24,8 +24,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/tracey/critical_path"
-	"github.com/google/tracey/test_trace"
+	criticalpath "github.com/google/tracey/critical_path"
+	testtrace "github.com/google/tracey/test_trace"
 	"github.com/google/tracey/trace"
 	traceparser "github.com/google/tracey/trace/parser"
 )
@@ -137,18 +137,6 @@ func (tl *testLogger) prettyPrint() string {
 	return strings.Join(ret, "\n")
 }
 
-func pm(
-	pms ...trace.PathElementMatcher,
-) []trace.PathElementMatcher {
-	return pms
-}
-
-func pms(
-	pms ...[]trace.PathElementMatcher,
-) [][]trace.PathElementMatcher {
-	return pms
-}
-
 func criticalAntagonismsFunction(cpSpanPattern ...string) func(t trace.Wrapper[time.Duration, testtrace.StringPayload, testtrace.StringPayload, testtrace.StringPayload]) (
 	[]trace.ElementarySpan[time.Duration, testtrace.StringPayload, testtrace.StringPayload, testtrace.StringPayload],
 	error,
@@ -184,7 +172,7 @@ func criticalAntagonismsFunction(cpSpanPattern ...string) func(t trace.Wrapper[t
 		if err != nil {
 			return nil, err
 		}
-		return path.CriticalPath, nil
+		return path.ElementarySpans()
 	}
 }
 
@@ -467,7 +455,7 @@ func TestFindAntagonisms(t *testing.T) {
 						if err != nil {
 							return nil, err
 						}
-						return path.CriticalPath, nil
+						return path.ElementarySpans()
 					},
 				).
 				WithAntagonistSpanPattern(spanSpec(t, "**")),

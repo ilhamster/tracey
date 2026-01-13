@@ -99,7 +99,7 @@ func newTransformingElementarySpan[T any, CP, SP, DP fmt.Stringer](
 	nonblockingOriginalDependenciesMayShrink bool,
 	nonblockingOriginalDependenciesShrinkStartOffset float64,
 	originalMarks []trace.Mark[T],
-) elementarySpanTransformer[T, CP, SP, DP] {
+) (elementarySpanTransformer[T, CP, SP, DP], error) {
 	ret := &transformingElementarySpan[T, CP, SP, DP]{
 		spanTransformer:                          st,
 		newElementarySpan:                        trace.NewMutableElementarySpan[T, CP, SP, DP](),
@@ -115,9 +115,11 @@ func newTransformingElementarySpan[T any, CP, SP, DP fmt.Stringer](
 	}
 	if predecessor != nil {
 		ret.pendingPredecessorCount = 1
-		predecessor.(*transformingElementarySpan[T, CP, SP, DP]).setSuccessor(ret)
+		if err := predecessor.(*transformingElementarySpan[T, CP, SP, DP]).setSuccessor(ret); err != nil {
+			return nil, err
+		}
 	}
-	return ret
+	return ret, nil
 }
 
 func (tes *transformingElementarySpan[T, CP, SP, DP]) hasOutgoingDep() bool {
@@ -222,7 +224,7 @@ func (tes *transformingElementarySpan[T, CP, SP, DP]) finalizeMoments() error {
 			}
 		}
 	}
-	var scalingFactor float64 = 1.0
+	var scalingFactor = 1.0
 	if tes.initialDuration != 0 {
 		scalingFactor = tes.newDuration / tes.initialDuration
 	}
@@ -358,8 +360,7 @@ func (tes *transformingElementarySpan[T, CP, SP, DP]) setNewOutgoingDependency(
 		return fmt.Errorf("can't set new outgoing dependency for ElementarySpan: it already has one")
 	}
 	tes.addedOutgoingDependency = addedOutgoingDependency
-	addedOutgoingDependency.dep.SetOriginElementarySpan(tes.comparator(), tes.newElementarySpan)
-	return nil
+	return addedOutgoingDependency.dep.SetOriginElementarySpan(tes.comparator(), tes.newElementarySpan)
 }
 
 func (tes *transformingElementarySpan[T, CP, SP, DP]) setNewIncomingDependency(

@@ -71,7 +71,7 @@ func prettyPrintAppliedSpanModifications(
 ) string {
 	ret := indent + prettyPrintSpanSelection(asm.spanSelection, namer)
 	if asm.mst.startsAsEarlyAsPossible {
-		ret = ret + fmt.Sprintf(" start as early as possible")
+		ret = ret + " start as early as possible"
 	}
 	if asm.mst.hasDurationScalingFactor {
 		ret = ret + fmt.Sprintf(" scale * %.2f%%", asm.mst.durationScalingFactor*100.0)
@@ -117,7 +117,7 @@ func prettyPrintPositionMomentString(p *traceparser.PositionPattern) string {
 	} else if markRegexp, ok := p.PositionPattern().MarkRegexp(); ok {
 		return fmt.Sprintf("(%s)", markRegexp)
 	}
-	return fmt.Sprintf("<unknown moment>")
+	return "<unknown moment>"
 }
 
 func prettyPrintAppliedDependencyAdditions(
