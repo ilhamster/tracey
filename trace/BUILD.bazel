@@ -1,0 +1,36 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "trace",
+    srcs = [
+        "check.go",
+        "comparators.go",
+        "dependency_types.go",
+        "hierarchy_types.go",
+        "matching.go",
+        "model.go",
+        "mutable_model.go",
+        "paths.go",
+        "position.go",
+        "selection.go",
+        "trace.go",
+        "type_enumeration.go",
+    ],
+    importpath = "github.com/ilhamster/tracey/trace",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "trace_test",
+    srcs = [
+        "check_test.go",
+        "hierarchy_types_test.go",
+        "matching_test.go",
+        "paths_test.go",
+        "position_test.go",
+        "selection_test.go",
+        "trace_test.go",
+    ],
+    embed = [":trace"],
+    deps = ["@com_github_google_go_cmp//cmp:go_default_library"],
+)

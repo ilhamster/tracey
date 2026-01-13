@@ -1,0 +1,26 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "spawning",
+    srcs = [
+        "matching.go",
+        "spawning_forest.go",
+    ],
+    importpath = "github.com/ilhamster/tracey/spawning",
+    visibility = ["//visibility:public"],
+    deps = ["//trace"],
+)
+
+go_test(
+    name = "spawning_test",
+    srcs = [
+        "matching_test.go",
+        "spawning_forest_test.go",
+    ],
+    embed = [":spawning"],
+    deps = [
+        "//test_trace",
+        "//trace",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+    ],
+)

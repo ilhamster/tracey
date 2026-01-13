@@ -1,0 +1,48 @@
+load("@bazel_skylib//rules:run_binary.bzl", "run_binary")
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+run_binary(
+    name = "generate_parser",
+    srcs = ["parser.y"],
+    outs = [
+        "y.go",
+        "y.output",
+    ],
+    args = [
+        "-o",
+        "$(location y.go)",
+        "-v",
+        "$(location y.output)",
+        "$(location parser.y)",
+    ],
+    tool = "@org_golang_x_tools//cmd/goyacc",
+)
+
+go_library(
+    name = "parser",
+    srcs = [
+        "parser.go",
+        ":y.go",
+    ],
+    importpath = "github.com/ilhamster/tracey/transform/parser",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//trace",
+        "//trace/parser",
+        "//trace/parser/lexer",
+        "//trace/parser/prefix_tree",
+        "//transform",
+    ],
+)
+
+go_test(
+    name = "parser_test",
+    srcs = ["parser_test.go"],
+    embed = [":parser"],
+    deps = [
+        "//test_trace",
+        "//trace",
+        "//trace/parser/lexer",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+    ],
+)

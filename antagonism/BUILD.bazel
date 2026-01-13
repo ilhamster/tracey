@@ -1,0 +1,25 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "antagonism",
+    srcs = ["antagonism.go"],
+    importpath = "github.com/ilhamster/tracey/antagonism",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//trace",
+        "//trace/parser",
+    ],
+)
+
+go_test(
+    name = "antagonism_test",
+    srcs = ["antagonism_test.go"],
+    embed = [":antagonism"],
+    deps = [
+        "//critical_path",
+        "//test_trace",
+        "//trace",
+        "//trace/parser",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+    ],
+)

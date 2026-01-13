@@ -1,0 +1,25 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "drag",
+    srcs = ["drag.go"],
+    importpath = "github.com/ilhamster/tracey/drag",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//critical_path",
+        "//trace",
+    ],
+)
+
+go_test(
+    name = "drag_test",
+    srcs = ["drag_test.go"],
+    embed = [":drag"],
+    deps = [
+        "//critical_path",
+        "//test_trace",
+        "//trace",
+        "//trace/parser",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+    ],
+)

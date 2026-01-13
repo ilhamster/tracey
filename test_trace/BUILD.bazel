@@ -1,0 +1,23 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "test_trace",
+    srcs = [
+        "prettyprint.go",
+        "test_trace_builder.go",
+        "test_traces.go",
+    ],
+    importpath = "github.com/ilhamster/tracey/test_trace",
+    visibility = ["//visibility:public"],
+    deps = ["//trace"],
+)
+
+go_test(
+    name = "test_trace_test",
+    srcs = ["test_trace_test.go"],
+    embed = [":test_trace"],
+    deps = [
+        "//trace",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+    ],
+)

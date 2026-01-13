@@ -1,0 +1,41 @@
+# gazelle:prefix github.com/ilhamster/tracey
+
+load("@gazelle//:def.bzl", "gazelle")
+load("@rules_go//go:def.bzl", "nogo")
+
+gazelle(name = "gazelle")
+
+nogo(
+    name = "nogo",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@org_golang_x_tools//go/analysis/passes/composite:go_default_library",
+        "@org_golang_x_tools//go/analysis/passes/copylock:go_default_library",
+        "@org_golang_x_tools//go/analysis/passes/errorsas:go_default_library",
+        "@org_golang_x_tools//go/analysis/passes/loopclosure:go_default_library",
+        "@org_golang_x_tools//go/analysis/passes/lostcancel:go_default_library",
+        "@org_golang_x_tools//go/analysis/passes/nilfunc:go_default_library",
+        "@org_golang_x_tools//go/analysis/passes/printf:go_default_library",
+        "@org_golang_x_tools//go/analysis/passes/shift:go_default_library",
+        "@org_golang_x_tools//go/analysis/passes/stdmethods:go_default_library",
+        "@org_golang_x_tools//go/analysis/passes/structtag:go_default_library",
+        "@org_golang_x_tools//go/analysis/passes/tests:go_default_library",
+        "@org_golang_x_tools//go/analysis/passes/unusedresult:go_default_library",
+    ],
+)
+
+sh_binary(
+    name = "format",
+    srcs = ["tools/format.sh"],
+    args = [
+        "--buildifier",
+        "$(rootpath @buildifier_prebuilt//:buildifier)",
+        "--gofmt",
+        "$(rootpath @go_sdk//:bin/gofmt)",
+    ],
+    data = [
+        "@buildifier_prebuilt//:buildifier",
+        "@go_sdk//:bin/gofmt",
+    ],
+    visibility = ["//visibility:public"],
+)

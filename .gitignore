@@ -1,0 +1,8 @@
+# Bazel output trees.
+bazel-*
+
+# goyacc-generated parser artifacts.
+trace/parser/y.go
+trace/parser/y.output
+transform/parser/y.go
+transform/parser/y.output

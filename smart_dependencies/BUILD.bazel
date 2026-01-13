@@ -1,0 +1,22 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "smart_dependencies",
+    srcs = ["smart_dependencies.go"],
+    importpath = "github.com/ilhamster/tracey/smart_dependencies",
+    visibility = ["//visibility:public"],
+    deps = ["//trace"],
+)
+
+go_test(
+    name = "smart_dependencies_test",
+    srcs = ["smart_dependencies_test.go"],
+    embed = [":smart_dependencies"],
+    deps = [
+        "//test_trace",
+        "//trace",
+        "//trace/parser",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+        "@com_github_google_go_cmp//cmp/cmpopts:go_default_library",
+    ],
+)

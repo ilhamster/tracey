@@ -1,0 +1,14 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "prefix_tree",
+    srcs = ["prefix_tree.go"],
+    importpath = "github.com/ilhamster/tracey/trace/parser/prefix_tree",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "prefix_tree_test",
+    srcs = ["prefix_tree_test.go"],
+    embed = [":prefix_tree"],
+)

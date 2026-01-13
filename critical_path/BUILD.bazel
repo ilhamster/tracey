@@ -1,0 +1,33 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "critical_path",
+    srcs = [
+        "cache.go",
+        "critical_path.go",
+        "critical_path_strategies.go",
+        "critical_path_types.go",
+        "finder.go",
+    ],
+    importpath = "github.com/ilhamster/tracey/critical_path",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//trace",
+        "//trace/parser",
+    ],
+)
+
+go_test(
+    name = "critical_path_test",
+    srcs = [
+        "critical_path_test.go",
+        "finder_test.go",
+    ],
+    embed = [":critical_path"],
+    deps = [
+        "//test_trace",
+        "//trace",
+        "//trace/parser",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+    ],
+)

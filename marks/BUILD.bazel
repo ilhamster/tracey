@@ -1,0 +1,24 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "marks",
+    srcs = ["annotator.go"],
+    importpath = "github.com/ilhamster/tracey/marks",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//trace",
+        "//trace/parser",
+    ],
+)
+
+go_test(
+    name = "marks_test",
+    srcs = ["annotator_test.go"],
+    embed = [":marks"],
+    deps = [
+        "//test_trace",
+        "//trace",
+        "//trace/parser",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+    ],
+)
