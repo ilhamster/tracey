@@ -52,7 +52,7 @@ func pathMatcher(matchers ...PathElementMatcher) []PathElementMatcher {
 
 func testTrace1(t *testing.T) Trace[time.Duration, payload, payload, payload] {
 	t.Helper()
-	trace := NewTrace[time.Duration, payload, payload, payload](DurationComparator, &testNamer{})
+	trace := NewTrace(DurationComparator, &testNamer{})
 	a := trace.NewRootSpan(0, 100, "a")
 	ab, err := a.NewChildSpan(DurationComparator, 10, 40, "b")
 	if err != nil {
@@ -156,7 +156,7 @@ f: 0s-50ns`,
 }
 
 func TestFindCategories(t *testing.T) {
-	trace := NewTrace[time.Duration, payload, payload, payload](DurationComparator, &testNamer{})
+	trace := NewTrace(DurationComparator, &testNamer{})
 	a := trace.NewRootCategory(0, "a")
 	ab := a.NewChildCategory("b")
 	ab.NewChildCategory("c")
@@ -201,7 +201,7 @@ func TestFindCategories(t *testing.T) {
 		wantMatchingCatsStr: `a/b/c, a/c/d`,
 	}} {
 		t.Run(test.description, func(t *testing.T) {
-			matchingCats := findCategories[time.Duration, payload, payload, payload](trace, &testNamer{}, 0, test.matchers)
+			matchingCats := findCategories(trace, &testNamer{}, 0, test.matchers)
 			var gotMatchingCatsStrs []string
 			for _, cat := range matchingCats {
 				var path []string

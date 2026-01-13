@@ -224,7 +224,7 @@ func (sh *spannerHeap[T, CP, SP, DP]) Pop() (x any) {
 }
 
 func (sh *spannerHeap[T, CP, SP, DP]) String() string {
-	var ret []string
+	var ret = []string{}
 	for _, el := range sh.spanners {
 		ret = append(ret, fmt.Sprintf("%s %v-%v", el.ElementarySpan().Span().Payload(),
 			el.ElementarySpan().Start(), el.ElementarySpan().End()))
@@ -441,9 +441,11 @@ func (a *analyzer[T, CP, SP, DP]) find(
 				// Backwards dependency edges result in apparently-negative antagonism
 				// durations.  Don't report those, and warn about the backwards edges.
 				for _, g := range a.traceGroups {
-					logger.LogAntagonism(
+					if err := logger.LogAntagonism(
 						g.group, g.victims, g.antagonists, lastTime, nextTime,
-					)
+					); err != nil {
+						return err
+					}
 				}
 			}
 		}

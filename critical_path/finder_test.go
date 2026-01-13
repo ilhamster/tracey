@@ -69,7 +69,7 @@ func newTestTrace(t *testing.T) *testTrace {
 	return &testTrace{
 		tr: tr,
 		endpoints: map[Type]*Endpoints[time.Duration, tt.StringPayload, tt.StringPayload, tt.StringPayload]{
-			rootE2EType: &Endpoints[time.Duration, tt.StringPayload, tt.StringPayload, tt.StringPayload]{
+			rootE2EType: {
 				Start: from,
 				End:   to,
 			},

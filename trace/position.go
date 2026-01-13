@@ -175,7 +175,7 @@ func FindPositionInSpan[T any, CP, SP, DP fmt.Stringer](
 	case 0: // Special case 0% to the first ES
 		es := span.ElementarySpans()[0]
 		return []*ElementarySpanPosition[T, CP, SP, DP]{
-			&ElementarySpanPosition[T, CP, SP, DP]{
+			{
 				ElementarySpan: es,
 				At:             es.Start(),
 			},
@@ -184,7 +184,7 @@ func FindPositionInSpan[T any, CP, SP, DP fmt.Stringer](
 		ess := span.ElementarySpans()
 		es := ess[len(ess)-1]
 		return []*ElementarySpanPosition[T, CP, SP, DP]{
-			&ElementarySpanPosition[T, CP, SP, DP]{
+			{
 				ElementarySpan: es,
 				At:             es.End(),
 			},
@@ -200,7 +200,7 @@ func FindPositionInSpan[T any, CP, SP, DP fmt.Stringer](
 			nextRunningDuration := runningDuration + comparator.Diff(es.End(), es.Start())
 			if nextRunningDuration >= targetDuration {
 				return []*ElementarySpanPosition[T, CP, SP, DP]{
-					&ElementarySpanPosition[T, CP, SP, DP]{
+					{
 						ElementarySpan: es,
 						At:             comparator.Add(es.Start(), targetDuration-runningDuration),
 					},
@@ -231,7 +231,7 @@ type positionFinder[T any, CP, SP, DP fmt.Stringer] struct {
 }
 
 func (pf *positionFinder[T, CP, SP, DP]) FindPositions() []*ElementarySpanPosition[T, CP, SP, DP] {
-	var matchingESs []*ElementarySpanPosition[T, CP, SP, DP]
+	var matchingESs = []*ElementarySpanPosition[T, CP, SP, DP]{}
 	for _, span := range pf.SpanFinder.FindSpans() {
 		matchingESs = append(matchingESs, FindPositionInSpan(pf.positionPattern, pf.Comparator(), span)...)
 	}

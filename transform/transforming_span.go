@@ -78,7 +78,7 @@ func newTransformingSpan[T any, CP, SP, DP fmt.Stringer](
 		// an equal share of the new unsuspended duration.
 		esMinDuration = tsb.newUnsuspendedDuration / float64(newESCount)
 	}
-	var scalingFactor float64 = 1.0
+	var scalingFactor = 1.0
 	if tsb.originalUnsuspendedDuration != 0 {
 		scalingFactor = tsb.newUnsuspendedDuration / tsb.originalUnsuspendedDuration
 	}
@@ -211,7 +211,7 @@ func (tsb *transformingSpanBuilder[T, CP, SP, DP]) pushTransformingElementarySpa
 	initiallyBlockedByPredecessor bool,
 ) (elementarySpanTransformer[T, CP, SP, DP], error) {
 	duration := tsb.span.traceTransformer().comparator().Diff(end, start)
-	tes := newTransformingElementarySpan(
+	tes, err := newTransformingElementarySpan(
 		tsb.span, tsb.lastES, tsb.span,
 		start, tsb.startOffsetAdjustment, duration,
 		initiallyBlockedByPredecessor,
@@ -219,6 +219,9 @@ func (tsb *transformingSpanBuilder[T, CP, SP, DP]) pushTransformingElementarySpa
 		tsb.incomingDependencyMayShrinkToOriginOffset,
 		marks,
 	)
+	if err != nil {
+		return nil, err
+	}
 	if tsb.lastES != nil {
 		tsb.lastES.allIncomingDependenciesAdded()
 	}
@@ -321,8 +324,7 @@ func (tsb *transformingSpanBuilder[T, CP, SP, DP]) transformNextOriginalElementa
 	nextStart, nextAD := tsb.findNextAddedDependency(original.Start(), original.End())
 	if nextAD == nil {
 		// The original ElementarySpan can be added unmodified.
-		tsb.pushOriginalElementarySpan(original)
-		return nil
+		return tsb.pushOriginalElementarySpan(original)
 	}
 	originalMarks := original.Marks()
 	// Snip originalMarks into two parts.  The first, with all marks with moments
@@ -368,10 +370,12 @@ func (tsb *transformingSpanBuilder[T, CP, SP, DP]) transformNextOriginalElementa
 	// produce one last ElementarySpan.
 	if !comparator.Equal(lastStart, original.End()) ||
 		(lastAD != nil && !lastAD.outgoingHere) {
-		tsb.pushNewElementarySpan(
+		if err := tsb.pushNewElementarySpan(
 			lastStart, original.End(),
 			snipMarksAt(nextStart),
-			lastAD, nil)
+			lastAD, nil); err != nil {
+			return err
+		}
 	}
 	// If the original ElementarySpan had an outgoing dependency, and there's now
 	// a new outgoing dependency at the end of the transformed ElementarySpan,

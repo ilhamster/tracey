@@ -86,7 +86,7 @@ func NewSpanPatternBuilder(
 ) *SpanPattern {
 	ret := &SpanPattern{
 		pathElements: []*spanPatternPathElement{
-			&spanPatternPathElement{
+			{
 				spanPattern: rootSpanPattern,
 				directChild: true,
 			},

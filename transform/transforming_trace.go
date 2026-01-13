@@ -107,7 +107,7 @@ func (tt *transformingTrace[T, CP, SP, DP]) dependencyFromOriginal(
 	}
 	ret, ok := tt.transformingDependenciesByOriginal[original]
 	if !ok {
-		ret = newTransformingDependency[T, CP, SP, DP](tt, original)
+		ret = newTransformingDependency(tt, original)
 		tt.transformingDependenciesByOriginal[original] = ret
 	}
 	return ret
@@ -337,7 +337,7 @@ func transformTrace[T any, CP, SP, DP fmt.Stringer](
 	// Build a transformingTrace to manage the transformation.
 	tt := &transformingTrace[T, CP, SP, DP]{
 		original: original,
-		new: trace.NewMutableTrace[T, CP, SP, DP](
+		new: trace.NewMutableTrace(
 			original.Comparator(),
 			original.DefaultNamer(),
 		),
@@ -409,7 +409,9 @@ func transformTrace[T any, CP, SP, DP fmt.Stringer](
 			originalCat := originalRootSpan.ParentCategory(ht)
 			if originalCat != nil {
 				newCat := originalToNewCategories[originalCat]
-				newCat.AddRootSpan(newMutableRootSpan)
+				if err := newCat.AddRootSpan(newMutableRootSpan); err != nil {
+					return nil, err
+				}
 			}
 		}
 		if err := tt.buildChildSpans(newRootST, newMutableRootSpan); err != nil {

@@ -243,7 +243,7 @@ func (tpp *TracePrettyPrinter[T, CP, SP, DP]) PrettyPrintTraceSpans(
 ) string {
 	ret := []string{
 		"",
-		fmt.Sprintf("Trace spans:"),
+		"Trace spans:",
 	}
 	rootSpans := t.RootSpans()
 	namer := t.DefaultNamer()

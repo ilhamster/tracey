@@ -27,7 +27,7 @@ import (
 func findSpan(
 	t *testing.T,
 	trace Trace[time.Duration, payload, payload, payload],
-	namer Namer[time.Duration, payload, payload, payload],
+	_ Namer[time.Duration, payload, payload, payload],
 	path ...string,
 ) Span[time.Duration, payload, payload, payload] {
 	t.Helper()
@@ -73,8 +73,8 @@ func TestSpanPaths(t *testing.T) {
 		wantUniquePath:  strs("id:a", "id:c", "id:d", "id:e"),
 	}} {
 		t.Run(strings.Join(test.wantUniquePath, "/"), func(t *testing.T) {
-			gotDisplayPath := GetSpanDisplayPath[time.Duration, payload, payload, payload](test.span, &testNamer{})
-			gotUniquePath := GetSpanUniquePath[time.Duration, payload, payload, payload](test.span, &testNamer{})
+			gotDisplayPath := GetSpanDisplayPath(test.span, &testNamer{})
+			gotUniquePath := GetSpanUniquePath(test.span, &testNamer{})
 			if diff := cmp.Diff(test.wantDisplayPath, gotDisplayPath); diff != "" {
 				t.Errorf("Got display path %v, diff (-want +got) %s", gotDisplayPath, diff)
 			}
@@ -86,7 +86,7 @@ func TestSpanPaths(t *testing.T) {
 }
 
 func TestCategoryPaths(t *testing.T) {
-	trace := NewTrace[time.Duration, payload, payload, payload](DurationComparator, &testNamer{})
+	trace := NewTrace(DurationComparator, &testNamer{})
 	a := trace.NewRootCategory(0, "a")
 	ab := a.NewChildCategory("b")
 	abc := ab.NewChildCategory("c")
@@ -124,8 +124,8 @@ func TestCategoryPaths(t *testing.T) {
 		wantUniquePath:  strs("a", "c", "d", "e"),
 	}} {
 		t.Run(strings.Join(test.wantUniquePath, "/"), func(t *testing.T) {
-			gotDisplayPath := GetCategoryDisplayPath[time.Duration, payload, payload, payload](test.category, &testNamer{})
-			gotUniquePath := GetCategoryUniquePath[time.Duration, payload, payload, payload](test.category, &testNamer{})
+			gotDisplayPath := GetCategoryDisplayPath(test.category, &testNamer{})
+			gotUniquePath := GetCategoryUniquePath(test.category, &testNamer{})
 			if diff := cmp.Diff(test.wantDisplayPath, gotDisplayPath); diff != "" {
 				t.Errorf("Got display path %v, diff (-want +got) %s", gotDisplayPath, diff)
 			}

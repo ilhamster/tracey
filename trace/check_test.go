@@ -29,7 +29,7 @@ func TestCheck(t *testing.T) {
 	}{{
 		description: "OK trace",
 		buildTrace: func(t *testing.T) Trace[time.Duration, payload, payload, payload] {
-			trace := NewTrace[time.Duration, payload, payload, payload](
+			trace := NewTrace(
 				DurationComparator,
 				&testNamer{},
 			)
@@ -59,7 +59,7 @@ func TestCheck(t *testing.T) {
 	}, {
 		description: "partial dependency",
 		buildTrace: func(t *testing.T) Trace[time.Duration, payload, payload, payload] {
-			trace := NewTrace[time.Duration, payload, payload, payload](
+			trace := NewTrace(
 				DurationComparator,
 				&testNamer{},
 			)
@@ -74,7 +74,7 @@ func TestCheck(t *testing.T) {
 	}, {
 		description: "negative dependency edge",
 		buildTrace: func(t *testing.T) Trace[time.Duration, payload, payload, payload] {
-			trace := NewTrace[time.Duration, payload, payload, payload](
+			trace := NewTrace(
 				DurationComparator,
 				&testNamer{},
 			)
@@ -93,7 +93,7 @@ func TestCheck(t *testing.T) {
 	}, {
 		description: "cycle reachable from entry elementary spans",
 		buildTrace: func(t *testing.T) Trace[time.Duration, payload, payload, payload] {
-			trace := NewMutableTrace[time.Duration, payload, payload, payload](
+			trace := NewMutableTrace(
 				DurationComparator,
 				&testNamer{},
 			)
@@ -119,7 +119,7 @@ func TestCheck(t *testing.T) {
 	}, {
 		description: "cycle unreachable from entry elementary spans",
 		buildTrace: func(t *testing.T) Trace[time.Duration, payload, payload, payload] {
-			trace := NewMutableTrace[time.Duration, payload, payload, payload](
+			trace := NewMutableTrace(
 				DurationComparator,
 				&testNamer{},
 			)

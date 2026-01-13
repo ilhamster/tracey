@@ -143,7 +143,7 @@ d: 60ns-80ns`,
 }
 
 func TestSpanSelectionIncludes(t *testing.T) {
-	trace := NewTrace[time.Duration, payload, payload, payload](DurationComparator, &testNamer{})
+	trace := NewTrace(DurationComparator, &testNamer{})
 	span := trace.NewRootSpan(0, 100, "parent")
 	child, err := span.NewChildSpan(DurationComparator, 30, 60, "child")
 	if err != nil {
@@ -174,7 +174,7 @@ func TestSpanSelectionIncludes(t *testing.T) {
 
 func testTrace2(t *testing.T) Trace[time.Duration, payload, payload, payload] {
 	t.Helper()
-	trace := NewTrace[time.Duration, payload, payload, payload](DurationComparator, &testNamer{})
+	trace := NewTrace(DurationComparator, &testNamer{})
 	a := trace.NewRootCategory(1, "a")
 	ab := a.NewChildCategory("b")
 	ab.NewChildCategory("c")
@@ -254,7 +254,7 @@ func TestCategorySelectionFullExpansion(t *testing.T) {
 			for _, category := range matchingCategories {
 				gotMatchingCategoriesStrs = append(
 					gotMatchingCategoriesStrs,
-					fmt.Sprintf("%s", category.Payload()),
+					category.Payload().String(),
 				)
 			}
 			sort.Strings(gotMatchingCategoriesStrs)
@@ -267,7 +267,7 @@ func TestCategorySelectionFullExpansion(t *testing.T) {
 }
 
 func TestCategorySelectionIncludes(t *testing.T) {
-	trace := NewTrace[time.Duration, payload, payload, payload](DurationComparator, &testNamer{})
+	trace := NewTrace(DurationComparator, &testNamer{})
 	span := trace.NewRootCategory(1, "parent")
 	child := span.NewChildCategory("child")
 	grandchild := child.NewChildCategory("grandchild")
@@ -293,7 +293,7 @@ func TestCategorySelectionIncludes(t *testing.T) {
 }
 
 func TestDependencySelection(t *testing.T) {
-	trace := NewTrace[time.Duration, payload, payload, payload](DurationComparator, &testNamer{})
+	trace := NewTrace(DurationComparator, &testNamer{})
 	span := trace.NewRootSpan(0, 100, "parent")
 	child, err := span.NewChildSpan(DurationComparator, 30, 60, "child")
 	if err != nil {

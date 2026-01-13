@@ -24,7 +24,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	criticalpath "github.com/google/tracey/critical_path"
-	"github.com/google/tracey/test_trace"
+	testtrace "github.com/google/tracey/test_trace"
 	"github.com/google/tracey/trace"
 	traceparser "github.com/google/tracey/trace/parser"
 )
@@ -323,11 +323,13 @@ func TestIntersectingIntervals(t *testing.T) {
 			gotIntersections := make([]string, len(test.ivals))
 			for idx, iv := range test.ivals {
 				intersections := map[*ival]struct{}{}
-				ivf.intersectingIntervals(iv, func(iiv interval[time.Duration, *ival]) {
+				if err := ivf.intersectingIntervals(iv, func(iiv interval[time.Duration, *ival]) {
 					if iv.payload() != iiv.payload() {
 						intersections[iiv.payload()] = struct{}{}
 					}
-				})
+				}); err != nil {
+					t.Fatalf("intersectingIntervals returned error: %v", err)
+				}
 				intersectionSlice := make([]*ival, 0, len(intersections))
 				for is := range intersections {
 					intersectionSlice = append(intersectionSlice, is)
@@ -522,14 +524,16 @@ func TestIntersectingElementarySpans(t *testing.T) {
 			gotESSlice := []string{}
 			for _, a := range activities {
 				esi := &esInterval[time.Duration, testtrace.StringPayload, testtrace.StringPayload, testtrace.StringPayload]{a.payload()}
-				iia := newIntersectingIntervalAccumulator[time.Duration, *activity[time.Duration, testtrace.StringPayload, testtrace.StringPayload, testtrace.StringPayload]](
+				iia := newIntersectingIntervalAccumulator(
 					trace.DurationComparator,
 					esi,
 				)
-				finder.intersectingIntervals(
+				if err := finder.intersectingIntervals(
 					esi,
 					iia.addIntersecting,
-				)
+				); err != nil {
+					t.Fatalf("intersectingIntervals returned error: %v", err)
+				}
 				intersectingIntervals := iia.get()
 				intersectingIntervalStrs := make([]string, 0, len(intersectingIntervals))
 				for ii := range intersectingIntervals {
@@ -647,7 +651,7 @@ D:   20ns  E 45ns-65ns [send from H @25ns] -> THIS -> <none>`,
 			if err != nil {
 				t.Fatalf("Failed to find end position '%s': %v", endPosSpec, err)
 			}
-			return NewEndpointFinder[time.Duration, testtrace.StringPayload, testtrace.StringPayload, testtrace.StringPayload](
+			return NewEndpointFinder(
 				tr, startES, endES,
 			)
 		},
@@ -685,7 +689,11 @@ D:   20ns  E 45ns-65ns [send from H @25ns] -> THIS -> <none>`,
 			if err != nil {
 				t.Fatalf("Failed to get trace critical path: %v", err)
 			}
-			for _, es := range cp.CriticalPath {
+			ess, err := cp.ElementarySpans()
+			if err != nil {
+				t.Fatalf("Failed to get critical path elementary spans: %v", err)
+			}
+			for _, es := range ess {
 				drag, err := df.Drag(es)
 				if err != nil {
 					t.Fatalf("Failed to get elementary span drag: %v", err)

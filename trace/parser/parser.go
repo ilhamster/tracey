@@ -79,13 +79,13 @@ var (
 
 var (
 	unquotedTerminationCharacters = map[rune]struct{}{
-		' ': struct{}{},
-		'/': struct{}{},
-		')': struct{}{},
-		'>': struct{}{},
-		',': struct{}{},
-		'%': struct{}{},
-		'@': struct{}{},
+		' ': {},
+		'/': {},
+		')': {},
+		'>': {},
+		',': {},
+		'%': {},
+		'@': {},
 	}
 )
 
@@ -130,7 +130,7 @@ func newLexer(input string) (*lexer.Lexer[*result, *yySymType], error) {
 	//   * A 'freeform' string running until an unescaped instance of any
 	//     character in [`/`, `)`, `>`, `,`, `%`, `@`] (that is, the tokens that
 	//     may follow strings in the parser) or EOI.
-	return lexer.New[*result, *yySymType](
+	return lexer.New[*result](
 		[]lexer.TokenConsumerFn[*yySymType]{
 			lexer.PrefixTreeConsumer(ptr, setStr),
 			lexer.QuotedStringConsumer(STR, '\'', setStr),
@@ -204,7 +204,7 @@ func buildSpanFinderPattern(
 	ht trace.HierarchyType,
 	spanSpecifiers *spanSpecifiers,
 ) (*trace.SpanPattern, error) {
-	var spanFinderOptions []trace.SpanPatternOption
+	var spanFinderOptions = []trace.SpanPatternOption{}
 	for _, spanSpecifier := range spanSpecifiers.spanSpecifiers {
 		categoryMatchers, err := buildPathElementMatchers(spanSpecifier.categoryMatchers)
 		if err != nil {

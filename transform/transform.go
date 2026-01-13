@@ -540,17 +540,7 @@ func (at *appliedTransforms[T, CP, SP, DP]) getSpanModifications(
 	}
 	return ret
 }
-func (at *appliedTransforms[T, CP, SP, DP]) getAppliedDependencyModificationsForOriginatingSpan(
-	originalOriginatingSpan trace.Span[T, CP, SP, DP],
-) []*appliedDependencyModifications[T, CP, SP, DP] {
-	var ret []*appliedDependencyModifications[T, CP, SP, DP]
-	for _, adm := range at.appliedDependencyModifications {
-		if adm.dependencySelection.IncludesOriginSpan(originalOriginatingSpan) {
-			ret = append(ret, adm)
-		}
-	}
-	return ret
-}
+
 func (at *appliedTransforms[T, CP, SP, DP]) getAppliedDependencyModificationsForDestinationSpan(
 	originalDestinationSpan trace.Span[T, CP, SP, DP],
 ) []*appliedDependencyModifications[T, CP, SP, DP] {

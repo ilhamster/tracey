@@ -24,7 +24,7 @@ import (
 	"github.com/google/tracey/trace"
 )
 
-var tpp = NewPrettyPrinter[time.Duration, StringPayload, StringPayload, StringPayload](TestNamer)
+var tpp = NewPrettyPrinter(TestNamer)
 
 func TestTraceBuildingAndPrettyprinting(t *testing.T) {
 	for _, test := range []struct {

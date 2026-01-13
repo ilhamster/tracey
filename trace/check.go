@@ -39,20 +39,14 @@ type esData[T any, CP, SP, DP fmt.Stringer] struct {
 	predecessors map[ElementarySpan[T, CP, SP, DP]]struct{}
 }
 
-func newESData[T any, CP, SP, DP fmt.Stringer](es ElementarySpan[T, CP, SP, DP]) *esData[T, CP, SP, DP] {
-	return &esData[T, CP, SP, DP]{
-		es: es,
-	}
-}
-
-func (esd *esData[T, CP, SP, DP]) addPred(t Trace[T, CP, SP, DP], pred ElementarySpan[T, CP, SP, DP]) {
+func (esd *esData[T, CP, SP, DP]) addPred(_ Trace[T, CP, SP, DP], pred ElementarySpan[T, CP, SP, DP]) {
 	if esd.predecessors == nil {
 		esd.predecessors = map[ElementarySpan[T, CP, SP, DP]]struct{}{}
 	}
 	esd.predecessors[pred] = struct{}{}
 }
 
-func (esd *esData[T, CP, SP, DP]) removePred(t Trace[T, CP, SP, DP], pred ElementarySpan[T, CP, SP, DP]) bool {
+func (esd *esData[T, CP, SP, DP]) removePred(_ Trace[T, CP, SP, DP], pred ElementarySpan[T, CP, SP, DP]) bool {
 	if esd.predecessors == nil {
 		return false
 	}
@@ -77,8 +71,7 @@ func findCycles[T any, CP, SP, DP fmt.Stringer](
 	ch *checkHelper,
 ) (visitedESs int) {
 	esDataByES := map[ElementarySpan[T, CP, SP, DP]]*esData[T, CP, SP, DP]{}
-	var getESData func(es ElementarySpan[T, CP, SP, DP]) *esData[T, CP, SP, DP]
-	getESData = func(es ElementarySpan[T, CP, SP, DP]) *esData[T, CP, SP, DP] {
+	var getESData = func(es ElementarySpan[T, CP, SP, DP]) *esData[T, CP, SP, DP] {
 		esd, ok := esDataByES[es]
 		if !ok {
 			visitedESs++
