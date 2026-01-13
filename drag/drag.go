@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/google/tracey/critical_path"
-	"github.com/google/tracey/trace"
+	"github.com/ilhamster/tracey/critical_path"
+	"github.com/ilhamster/tracey/trace"
 )
 
 // A struct used to track per-elementary-span activation timings

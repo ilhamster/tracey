@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/google/tracey/trace"
-	traceparser "github.com/google/tracey/trace/parser"
+	"github.com/ilhamster/tracey/trace"
+	traceparser "github.com/ilhamster/tracey/trace/parser"
 )
 
 // Trace describes trace types that support transformation.

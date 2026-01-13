@@ -17,7 +17,7 @@
 package criticalpath
 
 import (
-	"github.com/google/tracey/trace"
+	"github.com/ilhamster/tracey/trace"
 )
 
 // TypeData is a TypeEnumerationData specialized to critical path type.

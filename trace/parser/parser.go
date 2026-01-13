@@ -23,11 +23,11 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/google/tracey/spawning"
-	"github.com/google/tracey/trace"
-	"github.com/google/tracey/trace/parser/lexer"
-	"github.com/google/tracey/trace/parser/predicate"
-	prefixtree "github.com/google/tracey/trace/parser/prefix_tree"
+	"github.com/ilhamster/tracey/spawning"
+	"github.com/ilhamster/tracey/trace"
+	"github.com/ilhamster/tracey/trace/parser/lexer"
+	"github.com/ilhamster/tracey/trace/parser/predicate"
+	prefixtree "github.com/ilhamster/tracey/trace/parser/prefix_tree"
 )
 
 type result struct {

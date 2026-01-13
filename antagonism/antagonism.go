@@ -24,8 +24,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/google/tracey/trace"
-	traceparser "github.com/google/tracey/trace/parser"
+	"github.com/ilhamster/tracey/trace"
+	traceparser "github.com/ilhamster/tracey/trace/parser"
 )
 
 // ElementarySpanner wraps a Trace elementary span for antagonism logging.

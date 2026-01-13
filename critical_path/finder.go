@@ -19,8 +19,8 @@ package criticalpath
 import (
 	"fmt"
 
-	"github.com/google/tracey/trace"
-	traceparser "github.com/google/tracey/trace/parser"
+	"github.com/ilhamster/tracey/trace"
+	traceparser "github.com/ilhamster/tracey/trace/parser"
 )
 
 // Endpoints represents a {start, end} pair of Endpoints within a trace.

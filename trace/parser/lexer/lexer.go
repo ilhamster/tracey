@@ -24,7 +24,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	prefixtree "github.com/google/tracey/trace/parser/prefix_tree"
+	prefixtree "github.com/ilhamster/tracey/trace/parser/prefix_tree"
 )
 
 // TokenConsumerFn defines functions that consumes an arbitrary token from a

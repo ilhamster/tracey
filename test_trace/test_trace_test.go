@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/tracey/trace"
+	"github.com/ilhamster/tracey/trace"
 )
 
 var tpp = NewPrettyPrinter(TestNamer)

@@ -23,10 +23,10 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	criticalpath "github.com/google/tracey/critical_path"
-	testtrace "github.com/google/tracey/test_trace"
-	"github.com/google/tracey/trace"
-	traceparser "github.com/google/tracey/trace/parser"
+	criticalpath "github.com/ilhamster/tracey/critical_path"
+	testtrace "github.com/ilhamster/tracey/test_trace"
+	"github.com/ilhamster/tracey/trace"
+	traceparser "github.com/ilhamster/tracey/trace/parser"
 )
 
 // An adaptation of the example trace with drag from

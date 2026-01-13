@@ -23,9 +23,9 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	tt "github.com/google/tracey/test_trace"
-	"github.com/google/tracey/trace"
-	traceparser "github.com/google/tracey/trace/parser"
+	tt "github.com/ilhamster/tracey/test_trace"
+	"github.com/ilhamster/tracey/trace"
+	traceparser "github.com/ilhamster/tracey/trace/parser"
 )
 
 const (

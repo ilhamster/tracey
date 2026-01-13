@@ -21,7 +21,7 @@ import (
 	"math"
 	"sort"
 
-	"github.com/google/tracey/trace"
+	"github.com/ilhamster/tracey/trace"
 )
 
 // A span under construction in a transforming Trace.

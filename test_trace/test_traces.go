@@ -19,7 +19,7 @@ package testtrace
 import (
 	"time"
 
-	"github.com/google/tracey/trace"
+	"github.com/ilhamster/tracey/trace"
 )
 
 // TestNamer defines a trace.Namer for test traces constructed with this

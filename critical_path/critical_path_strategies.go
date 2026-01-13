@@ -17,7 +17,7 @@
 package criticalpath
 
 import (
-	"github.com/google/tracey/trace"
+	"github.com/ilhamster/tracey/trace"
 )
 
 // Strategies specifies a set of critical path strategies, along with their

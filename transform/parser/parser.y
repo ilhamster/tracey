@@ -21,8 +21,8 @@
     "strconv"
     "strings"
 
-    "github.com/google/tracey/trace/parser/lexer"
-  	traceparser "github.com/google/tracey/trace/parser"
+    "github.com/ilhamster/tracey/trace/parser/lexer"
+  	traceparser "github.com/ilhamster/tracey/trace/parser"
   )
 
   type transformType int

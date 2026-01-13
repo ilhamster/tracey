@@ -52,7 +52,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/google/tracey/trace"
+	"github.com/ilhamster/tracey/trace"
 )
 
 // Option defines options for smart dependencies.

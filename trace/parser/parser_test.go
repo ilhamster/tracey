@@ -24,10 +24,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/tracey/spawning"
-	testtrace "github.com/google/tracey/test_trace"
-	"github.com/google/tracey/trace"
-	"github.com/google/tracey/trace/parser/lexer"
+	"github.com/ilhamster/tracey/spawning"
+	testtrace "github.com/ilhamster/tracey/test_trace"
+	"github.com/ilhamster/tracey/trace"
+	"github.com/ilhamster/tracey/trace/parser/lexer"
 )
 
 func TestParseErrors(t *testing.T) {

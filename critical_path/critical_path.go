@@ -44,7 +44,7 @@ import (
 	"slices"
 	"sort"
 
-	"github.com/google/tracey/trace"
+	"github.com/ilhamster/tracey/trace"
 )
 
 // Type specifies a particular type (i.e., pair of endpoints) of critical path

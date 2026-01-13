@@ -24,9 +24,9 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/tracey/test_trace"
-	"github.com/google/tracey/trace"
-	traceparser "github.com/google/tracey/trace/parser"
+	"github.com/ilhamster/tracey/test_trace"
+	"github.com/ilhamster/tracey/trace"
+	traceparser "github.com/ilhamster/tracey/trace/parser"
 )
 
 func spanFinderPattern(t *testing.T, pathMatcherStrs ...string) *traceparser.SpanPattern {

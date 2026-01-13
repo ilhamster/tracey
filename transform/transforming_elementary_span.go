@@ -19,7 +19,7 @@ package transform
 import (
 	"fmt"
 
-	"github.com/google/tracey/trace"
+	"github.com/ilhamster/tracey/trace"
 )
 
 // An ElementarySpan in a transforming Trace.

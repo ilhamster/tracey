@@ -24,8 +24,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	testtrace "github.com/google/tracey/test_trace"
-	"github.com/google/tracey/trace"
+	testtrace "github.com/ilhamster/tracey/test_trace"
+	"github.com/ilhamster/tracey/trace"
 )
 
 // Returns a trace with spawning tree:

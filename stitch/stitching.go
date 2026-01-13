@@ -19,7 +19,7 @@ package stitch
 import (
 	"fmt"
 
-	"github.com/google/tracey/trace"
+	"github.com/ilhamster/tracey/trace"
 )
 
 type singleTraceStitcher[T any, CP, SP, DP fmt.Stringer] struct {

@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/tracey/trace"
+	"github.com/ilhamster/tracey/trace"
 )
 
 const (

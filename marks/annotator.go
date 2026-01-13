@@ -20,8 +20,8 @@ package marks
 import (
 	"fmt"
 
-	"github.com/google/tracey/trace"
-	traceparser "github.com/google/tracey/trace/parser"
+	"github.com/ilhamster/tracey/trace"
+	traceparser "github.com/ilhamster/tracey/trace/parser"
 )
 
 type dependencyDirection int

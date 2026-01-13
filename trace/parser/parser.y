@@ -21,9 +21,9 @@
     "strconv"
     "strings"
 
-    "github.com/google/tracey/trace"
-    "github.com/google/tracey/trace/parser/lexer"
-    "github.com/google/tracey/trace/parser/predicate"
+    "github.com/ilhamster/tracey/trace"
+    "github.com/ilhamster/tracey/trace/parser/lexer"
+    "github.com/ilhamster/tracey/trace/parser/predicate"
   )
 
   type resultType int

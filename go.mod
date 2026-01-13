@@ -1,4 +1,4 @@
-module github.com/google/tracey
+module github.com/ilhamster/tracey
 
 go 1.24.0
 

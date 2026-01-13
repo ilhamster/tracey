@@ -21,8 +21,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	tt "github.com/google/tracey/test_trace"
-	"github.com/google/tracey/trace"
+	tt "github.com/ilhamster/tracey/test_trace"
+	"github.com/ilhamster/tracey/trace"
 )
 
 func opts(opts ...Option[time.Duration, tt.StringPayload, tt.StringPayload, tt.StringPayload]) []Option[time.Duration, tt.StringPayload, tt.StringPayload, tt.StringPayload] {

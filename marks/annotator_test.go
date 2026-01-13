@@ -20,11 +20,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/tracey/trace"
+	"github.com/ilhamster/tracey/trace"
 
 	"github.com/google/go-cmp/cmp"
-	testtrace "github.com/google/tracey/test_trace"
-	traceparser "github.com/google/tracey/trace/parser"
+	testtrace "github.com/ilhamster/tracey/test_trace"
+	traceparser "github.com/ilhamster/tracey/trace/parser"
 )
 
 func parseSpanPattern(t *testing.T, spanPatternStr string) *traceparser.SpanPattern {

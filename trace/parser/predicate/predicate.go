@@ -22,7 +22,7 @@ package predicate
 import (
 	"fmt"
 
-	"github.com/google/tracey/trace"
+	"github.com/ilhamster/tracey/trace"
 )
 
 // ComparisonOperator enumerates comparison operators.
