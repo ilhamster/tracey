@@ -201,17 +201,23 @@ func (tt *transformingTrace[T, CP, SP, DP]) transformElementarySpans(
 	var lastES trace.MutableElementarySpan[T, CP, SP, DP]
 	for _, est := range ests {
 		thisES := est.getTransformed()
+		outgoing := thisES.Outgoing()
 		if lastES != nil &&
 			lastES.Outgoing() == nil &&
 			thisES.Incoming() == nil &&
-			tt.original.Comparator().Equal(lastES.End(), thisES.Start()) {
+			tt.original.Comparator().Equal(lastES.End(), thisES.Start()) &&
+			(outgoing == nil ||
+				(!outgoing.Options().Includes(trace.MultipleOriginsWithAndSemantics) &&
+					!outgoing.Options().Includes(trace.MultipleOriginsWithOrSemantics))) {
 			// If the transformations have left contiguous ElementarySpans with no
 			// incoming or outgoing dependences between them, merge those by updating
 			// the earlier one's endpoint, adding any outgoing Dependency from the
-			// later one to the earlier one, and then dropping the later one.
+			// later one to the earlier one, and then dropping the later one. A
+			// multi-origin dependency cannot be moved this way: adding the earlier
+			// origin would leave the dropped elementary span as another origin.
 			lastES.WithEnd(thisES.End())
-			if thisES.Outgoing() != nil {
-				thisES.Outgoing().(trace.MutableDependency[T, CP, SP, DP]).
+			if outgoing != nil {
+				outgoing.(trace.MutableDependency[T, CP, SP, DP]).
 					WithOriginElementarySpan(tt.comparator(), lastES)
 			}
 		} else {

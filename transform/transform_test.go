@@ -1236,3 +1236,46 @@ Trace spans:
 		})
 	}
 }
+
+func TestTransformPreservesMultipleOriginsWhenSuspensionCollapses(t *testing.T) {
+	for _, test := range []struct {
+		name   string
+		option trace.DependencyOption
+	}{
+		{name: "and", option: trace.MultipleOriginsWithAndSemantics},
+		{name: "or", option: trace.MultipleOriginsWithOrSemantics},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			var buildErr error
+			original := testtrace.NewTraceBuilderWithErrorHandler(func(err error) {
+				buildErr = err
+			}).
+				WithRootSpans(
+					testtrace.RootSpan(0, 30, "first", testtrace.ParentCategories()),
+					testtrace.RootSpan(0, 30, "second", testtrace.ParentCategories()),
+					testtrace.RootSpan(30, 40, "joined", testtrace.ParentCategories()),
+				).
+				WithSuspend(testtrace.Paths("first"), 10, 20).
+				WithDependency(
+					testtrace.Send,
+					"",
+					test.option,
+					testtrace.Origin(testtrace.Paths("first"), 30),
+					testtrace.Origin(testtrace.Paths("second"), 30),
+					testtrace.Destination(testtrace.Paths("joined"), 30),
+				).
+				Build()
+			if buildErr != nil {
+				t.Fatalf("build original trace: %v", buildErr)
+			}
+
+			transformed, err := New[time.Duration, testtrace.StringPayload, testtrace.StringPayload, testtrace.StringPayload]().TransformTrace(original)
+			if err != nil {
+				t.Fatalf("transform trace: %v", err)
+			}
+			if err := trace.Check(transformed, false); err != nil {
+				t.Fatalf("transformed trace is invalid: %v\n%s", err, testtrace.TPP.PrettyPrintTraceSpans(transformed))
+			}
+		})
+	}
+}

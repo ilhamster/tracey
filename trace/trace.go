@@ -227,7 +227,7 @@ func (cs *commonSpan[T, CP, SP, DP]) simplifyElementarySpans(comparator Comparat
 		if idx > 0 && idx < len(cs.elementarySpans)-1 &&
 			comparator.Equal(thisES.Start(), thisES.End()) &&
 			thisES.incoming == nil && thisES.outgoing == nil {
-			cs.elementarySpans = slices.Delete(cs.elementarySpans, idx, idx)
+			thisES.predecessor, thisES.successor = nil, nil
 			continue
 		}
 		// Merge abutting elementary spans with no intervening dependencies.
@@ -238,7 +238,7 @@ func (cs *commonSpan[T, CP, SP, DP]) simplifyElementarySpans(comparator Comparat
 				thisES.outgoing.replaceOriginElementarySpan(thisES, lastES)
 			}
 			lastES.end = thisES.end
-			cs.elementarySpans = slices.Delete(cs.elementarySpans, idx, idx)
+			thisES.predecessor, thisES.successor = nil, nil
 			continue
 		}
 		if lastES != nil {
@@ -249,6 +249,7 @@ func (cs *commonSpan[T, CP, SP, DP]) simplifyElementarySpans(comparator Comparat
 		lastES = thisES
 	}
 	if lastES != nil {
+		lastES.successor = nil
 		newESs = append(newESs, lastES)
 	}
 	cs.elementarySpans = newESs

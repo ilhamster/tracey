@@ -7,6 +7,7 @@ go_library(
         "test_trace_builder.go",
         "test_traces.go",
     ],
+    testonly = True,
     importpath = "github.com/ilhamster/tracey/test_trace",
     visibility = ["//visibility:public"],
     deps = ["//trace"],
