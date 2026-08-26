@@ -67,6 +67,7 @@ func TestParseErrors(t *testing.T) {
 		wantErrPointer: "  ^",
 	}} {
 		t.Run(test.description, func(t *testing.T) {
+			t.Parallel() // Parsing must be safe for concurrent corpus workers.
 			_, err := parse(test.input)
 			gotErrPointer := ""
 			if err != nil {

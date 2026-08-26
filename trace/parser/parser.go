@@ -313,13 +313,17 @@ func NewSpanFinder[T any, CP, SP, DP fmt.Stringer](
 	return trace.NewSpanFinder(sp.spanPattern.RootPattern(), t).WithSpanFilter(predicateFn), nil
 }
 
+func init() {
+	// Configure the generated parser's global flag before concurrent parses.
+	yyErrorVerbose = true
+}
+
 // Parses the provided string, returning the completed lexer used in parsing.
 func parse(input string) (*result, error) {
 	l, err := newLexer(input)
 	if err != nil {
 		return nil, err
 	}
-	yyErrorVerbose = true
 	p := &yyParserImpl{}
 	p.Parse(l)
 	if l.Err != nil {

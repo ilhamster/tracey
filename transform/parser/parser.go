@@ -185,13 +185,17 @@ func newLexer(input string) (*lexer.Lexer[*result, *yySymType], error) {
 	)
 }
 
+func init() {
+	// Configure the generated parser's global flag before concurrent parses.
+	yyErrorVerbose = true
+}
+
 // Parses the provided string, returning the completed lexer used in parsing.
 func parse(input string) (*result, error) {
 	l, err := newLexer(input)
 	if err != nil {
 		return nil, err
 	}
-	yyErrorVerbose = true
 	p := &yyParserImpl{}
 	p.Parse(l)
 	if l.Err != nil {
