@@ -579,6 +579,11 @@ func exactFind[T any, CP, SP, DP fmt.Stringer](
 	// Returns the esState for the provided ElementarySpan, creating it if
 	// necessary.
 	getESState := func(es trace.ElementarySpan[T, CP, SP, DP]) *esState {
+		// A missing successor cannot be on the path. Guard it before the map lookup:
+		// Go 1.27 js/wasm traps on nil interface keys in large maps.
+		if es == nil {
+			return nil
+		}
 		ess, ok := statesByES[es]
 		if !ok {
 			if !isOnPath(es) {

@@ -254,3 +254,37 @@ func TestDefaultTypes(t *testing.T) {
 		t.Fatalf("Default critical path strategy was '%s', expected '%s'", defaultType.Name, cpTypes.TypeData(0).Name)
 	}
 }
+
+// A long path exercises the state map's large-table representation, including
+// the missing successor at each synchronous child's terminal elementary span.
+func TestExactFindLongSynchronousChain(t *testing.T) {
+	const childCount = 1024
+	tr := tt.NewTestingTraceBuilder(t).Build()
+	end := time.Duration(2*childCount + 1)
+	root := tr.NewRootSpan(0, end, tt.StringPayload("root"))
+	for i := 0; i < childCount; i++ {
+		start := time.Duration(2*i + 1)
+		if _, err := root.NewChildSpan(tr.Comparator(), start, start+1, tt.StringPayload(fmt.Sprintf("child-%d", i))); err != nil {
+			t.Fatal(err)
+		}
+	}
+	from := &Endpoint[time.Duration, tt.StringPayload, tt.StringPayload, tt.StringPayload]{Span: root, At: 0}
+	to := &Endpoint[time.Duration, tt.StringPayload, tt.StringPayload, tt.StringPayload]{Span: root, At: end}
+	path, err := FindBetweenEndpoints(tr, from, to, PreferMostWork)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(path.CriticalPath) != 2*childCount+1 {
+		t.Fatalf("got %d path elements, want %d", len(path.CriticalPath), 2*childCount+1)
+	}
+	cursor := time.Duration(0)
+	for i, element := range path.CriticalPath {
+		if element.Start() != cursor || element.End() != cursor+1 {
+			t.Fatalf("element %d covers %v-%v, want %v-%v", i, element.Start(), element.End(), cursor, cursor+1)
+		}
+		cursor = element.End()
+	}
+	if cursor != end {
+		t.Fatalf("path ends at %v, want %v", cursor, end)
+	}
+}
