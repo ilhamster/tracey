@@ -475,6 +475,40 @@ func TestElementarySpanBuilding(t *testing.T) {
 		},
 		wantSpanStr: "() [p-] 0s-100ns",
 	}, {
+		description: "abutting elementary spans retain marks after Simplify",
+		buildSpan: func() (Span[time.Duration, payload, payload, payload], error) {
+			span := trace.NewRootSpan(0, 100, "")
+			for _, at := range []time.Duration{10, 50, 90} {
+				if err := span.Mark(trace.Comparator(), "repeated", at); err != nil {
+					return nil, err
+				}
+			}
+			if _, _, _, err := span.(*rootSpan[time.Duration, payload, payload, payload]).fissionElementarySpanAt(
+				DurationComparator, 50, fissionEarliest,
+			); err != nil {
+				return nil, err
+			}
+			trace.Simplify()
+			trace.Simplify()
+			return span, nil
+		},
+		wantSpanStr: "() [p-] 0s-100ns ['repeated' @10ns, 'repeated' @50ns, 'repeated' @90ns]",
+	}, {
+		description: "instantaneous marked intervals survive Simplify",
+		buildSpan: func() (Span[time.Duration, payload, payload, payload], error) {
+			span := trace.NewRootSpan(0, 100, "")
+			if err := span.Suspend(trace.Comparator(), 30, 70); err != nil {
+				return nil, err
+			}
+			if err := span.Mark(trace.Comparator(), "during_suspend", 50, MarkCanFissionSuspend); err != nil {
+				return nil, err
+			}
+			trace.Simplify()
+			trace.Simplify()
+			return span, nil
+		},
+		wantSpanStr: "() [p-] 0s-30ns, [p0] 50ns-50ns ['during_suspend' @50ns], [p1] 70ns-100ns",
+	}, {
 		description: "marks are added correctly",
 		buildSpan: func() (Span[time.Duration, payload, payload, payload], error) {
 			span := trace.NewRootSpan(0, 100, "")

@@ -223,10 +223,10 @@ func (cs *commonSpan[T, CP, SP, DP]) simplifyElementarySpans(comparator Comparat
 	newESs := make([]ElementarySpan[T, CP, SP, DP], 0, len(cs.elementarySpans))
 	for idx := 0; idx < len(cs.elementarySpans); idx++ {
 		thisES := cs.elementarySpanAt(idx)
-		// Remove instantaneous interior elementary spans having no dependencies.
+		// Remove instantaneous interior elementary spans having no dependencies or marks.
 		if idx > 0 && idx < len(cs.elementarySpans)-1 &&
 			comparator.Equal(thisES.Start(), thisES.End()) &&
-			thisES.incoming == nil && thisES.outgoing == nil {
+			thisES.incoming == nil && thisES.outgoing == nil && len(thisES.marks) == 0 {
 			thisES.predecessor, thisES.successor = nil, nil
 			continue
 		}
@@ -238,6 +238,7 @@ func (cs *commonSpan[T, CP, SP, DP]) simplifyElementarySpans(comparator Comparat
 				thisES.outgoing.replaceOriginElementarySpan(thisES, lastES)
 			}
 			lastES.end = thisES.end
+			lastES.marks = append(lastES.marks, thisES.marks...)
 			thisES.predecessor, thisES.successor = nil, nil
 			continue
 		}

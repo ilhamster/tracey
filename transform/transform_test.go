@@ -1279,3 +1279,60 @@ func TestTransformPreservesMultipleOriginsWhenSuspensionCollapses(t *testing.T) 
 		})
 	}
 }
+
+func TestTransformPreservesMarksWhenSuspensionsCollapse(t *testing.T) {
+	for _, scale := range []float64{1, 0} {
+		t.Run(fmt.Sprintf("scale_%g", scale), func(t *testing.T) {
+			original := testtrace.NewTestingTraceBuilder(t).
+				WithRootSpans(testtrace.RootSpan(0, 50, "writer", testtrace.ParentCategories(),
+					testtrace.Mark("request_start", 0),
+					testtrace.Mark("repeated", 5),
+					testtrace.Mark("before_wait", 10),
+					testtrace.Mark("after_wait", 20),
+					testtrace.Mark("repeated", 25),
+					testtrace.Mark("ad_written", 45),
+					testtrace.Mark("request_end", 50),
+				)).
+				WithSuspend(testtrace.Paths("writer"), 10, 20).
+				WithSuspend(testtrace.Paths("writer"), 30, 40).
+				Build()
+			originalText := testtrace.TPP.PrettyPrintTraceSpans(original)
+			transformed, err := New[time.Duration, testtrace.StringPayload, testtrace.StringPayload, testtrace.StringPayload]().
+				WithDependenciesScaledBy(nil, nil, nil, 0).
+				WithSpansStartingAsEarlyAsPossible(nil).
+				WithSpansScaledBy(nil, scale).
+				TransformTrace(original)
+			if err != nil {
+				t.Fatalf("transform trace: %v", err)
+			}
+			if err := trace.Check(transformed, true); err != nil {
+				t.Fatalf("transformed trace is invalid: %v", err)
+			}
+			span := transformed.RootSpans()[0]
+			if got, want := len(span.ElementarySpans()), 1; got != want {
+				t.Fatalf("elementary spans = %d, want %d", got, want)
+			}
+			labels := []string{"request_start", "repeated", "before_wait", "after_wait", "repeated", "ad_written", "request_end"}
+			moments := []time.Duration{0, 5, 10, 10, 15, 25, 30}
+			var want []string
+			for index, label := range labels {
+				want = append(want, fmt.Sprintf("%s@%s", label, time.Duration(float64(moments[index])*scale)))
+			}
+			for pass := 0; pass < 2; pass++ {
+				var got []string
+				for _, es := range span.ElementarySpans() {
+					for _, mark := range es.Marks() {
+						got = append(got, fmt.Sprintf("%s@%s", mark.Label(), mark.Moment()))
+					}
+				}
+				if diff := cmp.Diff(want, got); diff != "" {
+					t.Errorf("marks after %d simplifications (-want +got):\n%s", pass, diff)
+				}
+				transformed.Simplify()
+			}
+			if got := testtrace.TPP.PrettyPrintTraceSpans(original); got != originalText {
+				t.Errorf("transform changed original trace:\n%s", got)
+			}
+		})
+	}
+}

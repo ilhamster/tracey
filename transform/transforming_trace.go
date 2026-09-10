@@ -211,11 +211,20 @@ func (tt *transformingTrace[T, CP, SP, DP]) transformElementarySpans(
 					!outgoing.Options().Includes(trace.MultipleOriginsWithOrSemantics))) {
 			// If the transformations have left contiguous ElementarySpans with no
 			// incoming or outgoing dependences between them, merge those by updating
-			// the earlier one's endpoint, adding any outgoing Dependency from the
-			// later one to the earlier one, and then dropping the later one. A
+			// the earlier one's endpoint, carrying over the later one's marks and
+			// outgoing Dependency, and then dropping the later one. A
 			// multi-origin dependency cannot be moved this way: adding the earlier
 			// origin would leave the dropped elementary span as another origin.
 			lastES.WithEnd(thisES.End())
+			if marks := thisES.Marks(); len(marks) != 0 {
+				merged := append(lastES.Marks(), marks...)
+				mutableMarks := make([]trace.MutableMark[T], len(merged))
+				for index, mark := range merged {
+					// finalizeMoments creates mutable marks owned by the new trace.
+					mutableMarks[index] = mark.(trace.MutableMark[T])
+				}
+				lastES.WithMarks(mutableMarks)
+			}
 			if outgoing != nil {
 				outgoing.(trace.MutableDependency[T, CP, SP, DP]).
 					WithOriginElementarySpan(tt.comparator(), lastES)
