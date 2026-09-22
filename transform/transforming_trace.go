@@ -39,6 +39,9 @@ type transformingTrace[T any, CP, SP, DP fmt.Stringer] struct {
 	// A queue of ElementarySpans whose prior dependencies are all satisfied,
 	// ready to schedule.
 	schedulableElementarySpans []elementarySpanTransformer[T, CP, SP, DP]
+	// OR destinations to consider when the normal scheduling queue stalls.
+	// Retained in creation order so equal-time candidates are deterministic.
+	orDestinations []*transformingElementarySpan[T, CP, SP, DP]
 	// The set of Span-initial ElementarySpans which are currently gated.
 	gatedElementarySpans []*gatedElementarySpan[T, CP, SP, DP]
 	// The total number of ElementarySpans created so far in the new Trace, and
@@ -91,6 +94,12 @@ func (tt *transformingTrace[T, CP, SP, DP]) spanFromOriginal(
 		}
 		tt.transformingSpansByOriginal[original] = ret
 		tt.createdElementarySpanCount += len(ret.elementarySpans())
+		for _, est := range ret.elementarySpans() {
+			if incoming := est.getTransformed().Incoming(); incoming != nil &&
+				incoming.Options().Includes(trace.MultipleOriginsWithOrSemantics) {
+				tt.orDestinations = append(tt.orDestinations, est.(*transformingElementarySpan[T, CP, SP, DP]))
+			}
+		}
 	}
 	return ret, nil
 }
@@ -115,8 +124,8 @@ func (tt *transformingTrace[T, CP, SP, DP]) dependencyFromOriginal(
 
 // Enqueues the provided ElementarySpan for scheduling.  This ElementarySpan
 // must be schedulable:
-//   - All of its causal antecedents (Incoming().Origin() and Predecessor())
-//     must be scheduled; and
+//   - Its in-Span predecessor and incoming dependency must be resolved. An OR
+//     dependency may be partially resolved by releaseEarliestOR; and
 //   - Its new start point (tes.New.Start()) must be set, and should be the
 //     earliest point this ElementarySpan could run (e.g., its Predecessor's
 //     end point, or its Incoming dependency's point).
@@ -151,6 +160,33 @@ func (tt *transformingTrace[T, CP, SP, DP]) schedule(est elementarySpanTransform
 	} else {
 		tt.schedulableElementarySpans = append(tt.schedulableElementarySpans, est)
 	}
+}
+
+// Releases one partially resolved OR destination after the normal queue has
+// drained. Waiting for every origin can deadlock when a nontriggering origin
+// itself depends on the destination.
+//
+// Releasing every eligible destination, or the first one encountered, is not
+// safe: an earlier destination may unlock an earlier origin for a later one.
+// With nonnegative durations and scheduling delays, the earliest candidate
+// cannot be advanced by work that still needs another candidate to release.
+// Release just that candidate, then drain the normal queue before choosing
+// again. The usual queue need not run in temporal order.
+func (tt *transformingTrace[T, CP, SP, DP]) releaseEarliestOR() bool {
+	var earliest *transformingElementarySpan[T, CP, SP, DP]
+	for _, candidate := range tt.orDestinations {
+		if candidate.canReleasePartiallyResolvedOR() &&
+			(earliest == nil || tt.comparator().Less(
+				candidate.startFromResolvedPredecessors(), earliest.startFromResolvedPredecessors())) {
+			earliest = candidate
+		}
+	}
+	if earliest == nil {
+		return false
+	}
+	earliest.partiallyResolvedORReleased = true
+	tt.schedule(earliest)
+	return true
 }
 
 // Schedules the provided ungated Span-initial ElementarySpan, and marks its
@@ -380,7 +416,15 @@ func transformTrace[T any, CP, SP, DP fmt.Stringer](
 	//     schedulable and to enter the scheduling queue.
 	//   * If the scheduled ElementarySpan was the last in its Span, update any
 	//     Span gaters.
-	for len(tt.schedulableElementarySpans) > 0 {
+	for {
+		if len(tt.schedulableElementarySpans) == 0 {
+			if !tt.releaseEarliestOR() {
+				break
+			}
+			// The released destination may be gated. Keep looking for other
+			// eligible OR destinations even if this did not populate the queue.
+			continue
+		}
 		est := tt.schedulableElementarySpans[0]
 		tt.schedulableElementarySpans = tt.schedulableElementarySpans[1:]
 		if err := est.schedule(); err != nil {
@@ -404,6 +448,16 @@ func transformTrace[T any, CP, SP, DP fmt.Stringer](
 	if tt.scheduledElementarySpanCount < tt.createdElementarySpanCount {
 		return nil, fmt.Errorf("could not transform at least %d ElementarySpans; this may indicate a loop in the transformed Trace's dependence graph",
 			tt.createdElementarySpanCount-tt.scheduledElementarySpanCount)
+	}
+	// Negative scheduling delays can invalidate the ordering used to release
+	// partially resolved OR destinations. Do not return a trace whose times
+	// became stale when a later-scheduled origin resolved earlier.
+	for _, dest := range tt.orDestinations {
+		if dest.partiallyResolvedORReleased && !tt.comparator().Equal(
+			dest.startFromResolvedPredecessors(), dest.getTransformed().Start()) {
+			return nil, fmt.Errorf("a late OR origin would move an already scheduled destination in Span %s; check for negative durations or scheduling delays",
+				tt.namer().SpanName(dest.originalParent()))
+		}
 	}
 	// Finally, assemble the Span hierarchy of the new Trace.
 	for originalRootSpan, newRootST := range tt.transformingRootSpansByOriginal {

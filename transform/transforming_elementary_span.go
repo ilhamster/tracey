@@ -53,6 +53,10 @@ type transformingElementarySpan[T any, CP, SP, DP fmt.Stringer] struct {
 	// The number of incoming origin elementary spans still pending (i.e., not
 	// yet scheduled.)
 	pendingIncomingOriginCount int
+	// Whether this ElementarySpan was released with some OR origins still
+	// pending. Late origins must still be retained, but must not enqueue this
+	// ElementarySpan again (including while it is waiting on a SpanGate).
+	partiallyResolvedORReleased bool
 
 	// If nonblockingOriginalDependenciesMayShrink is true, the offset from the
 	// non-blocking incoming dependency's origin time to which it may shrink.
@@ -139,7 +143,9 @@ func (tes *transformingElementarySpan[T, CP, SP, DP]) setSuccessor(successor ele
 }
 
 func (tes *transformingElementarySpan[T, CP, SP, DP]) isStartOfSpan() bool {
-	return tes.newElementarySpan.Predecessor() == nil
+	// Mutable predecessor links are populated when the transformed Span is
+	// assembled, after scheduling. Use the transformation's own bookkeeping.
+	return !tes.hasPredecessor
 }
 
 func (tes *transformingElementarySpan[T, CP, SP, DP]) isEndOfSpan() bool {
@@ -188,7 +194,7 @@ func (tes *transformingElementarySpan[T, CP, SP, DP]) resolveIncomingDependencyA
 	chooseEarliest := dependencyOptions.Includes(trace.MultipleOriginsWithOrSemantics)
 	tes.updateIncomingDependencyResolved(resolvedAt, chooseEarliest)
 	tes.pendingIncomingOriginCount--
-	if tes.pendingIncomingOriginCount == 0 && tes.pendingPredecessorCount == 0 {
+	if !tes.partiallyResolvedORReleased && tes.pendingIncomingOriginCount == 0 && tes.pendingPredecessorCount == 0 {
 		tes.spanTransformer.traceTransformer().schedule(tes)
 	}
 }
@@ -203,16 +209,31 @@ func (tes *transformingElementarySpan[T, CP, SP, DP]) resolvePredecessorAt(resol
 	}
 }
 
-// Sets the new ElementarySpan's endpoint and any of its marks to their proper
-// position in the new span's extent.
-func (tes *transformingElementarySpan[T, CP, SP, DP]) finalizeMoments() error {
+// Returns the start time supported by the predecessors resolved so far.
+func (tes *transformingElementarySpan[T, CP, SP, DP]) startFromResolvedPredecessors() T {
 	// The new ES will start at its non-dependency start time, or its resolving
 	// incoming dependency time, whichever is later.
 	newStart := tes.newNonDependencyStart
 	if tes.hasNewIncomingDependenciesResolved && tes.comparator().Greater(tes.newIncomingDependenciesResolved, newStart) {
 		newStart = tes.newIncomingDependenciesResolved
 	}
-	tes.newElementarySpan.WithStart(newStart)
+	return newStart
+}
+
+// Returns whether this OR destination can make progress when the normal
+// scheduling queue has drained. Its in-Span predecessor remains mandatory.
+func (tes *transformingElementarySpan[T, CP, SP, DP]) canReleasePartiallyResolvedOR() bool {
+	incoming := tes.newElementarySpan.Incoming()
+	return !tes.partiallyResolvedORReleased &&
+		tes.pendingPredecessorCount == 0 && tes.pendingIncomingOriginCount > 0 &&
+		tes.hasNewIncomingDependenciesResolved && incoming != nil &&
+		incoming.Options().Includes(trace.MultipleOriginsWithOrSemantics)
+}
+
+// Sets the new ElementarySpan's endpoint and any of its marks to their proper
+// position in the new span's extent.
+func (tes *transformingElementarySpan[T, CP, SP, DP]) finalizeMoments() error {
+	tes.newElementarySpan.WithStart(tes.startFromResolvedPredecessors())
 	newEnd := tes.comparator().Add(tes.newElementarySpan.Start(), tes.newDuration)
 	tes.newElementarySpan.WithEnd(newEnd)
 	if tes.originalOutgoing != nil {

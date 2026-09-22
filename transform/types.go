@@ -41,9 +41,9 @@
 // non-overlapping ElementarySpans, with all incoming Dependencies at the
 // start of an ElementarySpan and all outgoing Dependencies at the end of one.
 // Within a Span, a suspended interval is represented as a gap between adjacent
-// ElementarySpans.  Because ElementarySpans can only depend on things that
-// happened before they start, they provide an ideal granularity for the Trace
-// transformation or simulation algorithm.  At a high level, this algorithm:
+// ElementarySpans. An OR dependency may have nontriggering origins after its
+// destination, including origins that depend on that destination. At a high
+// level, the transformation or simulation algorithm:
 //
 //   - Finds all *entry ElementarySpans*: ElementarySpans with no causal
 //     predecessors.
@@ -53,8 +53,15 @@
 //     schedules it, if it is not the first ElementarySpan of a gated Span.
 //     Scheduling an ElementarySpan may result in additional ElementarySpans
 //     being added to SQ.
-//   - Once SQ is empty, the transformed trace is assembled from the scheduled
-//     ElementarySpans.
+//   - When SQ empties, releases the earliest partially resolved OR destination
+//     whose in-Span predecessor has resolved, then resumes draining SQ. Only
+//     one such destination is released at a time: it may unlock an earlier
+//     origin for another OR destination. Candidates are ordered by their
+//     transformed start times, including scheduling delays and predecessor
+//     constraints, rather than by the order in which their origins resolve.
+//   - Once no more progress is possible, the transformed trace is assembled
+//     from the scheduled ElementarySpans, or an error is returned if some
+//     ElementarySpans remain unscheduled.
 //
 // When an ElementarySpan ES is scheduled,
 //
