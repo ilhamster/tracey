@@ -121,6 +121,12 @@ func findCycles[T any, CP, SP, DP fmt.Stringer](
 		outgoing := thisESD.es.Outgoing()
 		if outgoing != nil {
 			for _, destination := range outgoing.Destinations() {
+				// Predecessors are a set: a sequential edge and a dependency
+				// edge from the same origin contribute only one predecessor.
+				// The successor traversal above has already removed it.
+				if destination == thisESD.es.Successor() {
+					continue
+				}
 				if t.Comparator().LessOrEqual(thisESD.es.End(), destination.Start()) {
 					if !removePred(destination, thisESD.es) {
 						ch.error(fmt.Errorf("internal error: failed to remove expected origin elementary span from predecessor list"))

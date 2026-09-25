@@ -149,3 +149,27 @@ func TestCheck(t *testing.T) {
 		})
 	}
 }
+
+func TestCheckDependencyAlsoHasSequentialPredecessor(t *testing.T) {
+	for _, options := range []DependencyOption{DefaultDependencyOptions, MultipleOriginsWithAndSemantics, MultipleOriginsWithOrSemantics} {
+		tr := NewMutableTrace(DurationComparator, &testNamer{})
+		a0 := NewMutableElementarySpan[time.Duration, payload, payload, payload]().WithStart(0).WithEnd(10)
+		a1 := NewMutableElementarySpan[time.Duration, payload, payload, payload]().WithStart(10).WithEnd(20)
+		if _, err := tr.NewMutableRootSpan([]MutableElementarySpan[time.Duration, payload, payload, payload]{a0, a1}, "A"); err != nil {
+			t.Fatal(err)
+		}
+		dep := tr.NewMutableDependency(FirstUserDefinedDependencyType, options).
+			WithOriginElementarySpan(DurationComparator, a0).
+			WithDestinationElementarySpan(a1)
+		if options != DefaultDependencyOptions {
+			b := NewMutableElementarySpan[time.Duration, payload, payload, payload]().WithStart(0).WithEnd(5)
+			if _, err := tr.NewMutableRootSpan([]MutableElementarySpan[time.Duration, payload, payload, payload]{b}, "B"); err != nil {
+				t.Fatal(err)
+			}
+			dep.WithOriginElementarySpan(DurationComparator, b)
+		}
+		if err := Check(tr, true); err != nil {
+			t.Errorf("overlapping predecessor and origin (%v): %v", options, err)
+		}
+	}
+}

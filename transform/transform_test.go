@@ -1336,3 +1336,29 @@ func TestTransformPreservesMarksWhenSuspensionsCollapse(t *testing.T) {
 		})
 	}
 }
+
+func TestZeroScalingSameSpanDependency(t *testing.T) {
+	original := testtrace.NewTestingTraceBuilder(t).
+		WithRootSpans(testtrace.RootSpan(0, 50, "task", testtrace.ParentCategories())).Build()
+	span := original.RootSpans()[0]
+	dep := original.NewDependency(trace.FirstUserDefinedDependencyType, testtrace.StringPayload("queue"))
+	if err := dep.SetOriginSpan(original.Comparator(), span, 10); err != nil {
+		t.Fatal(err)
+	}
+	if err := dep.AddDestinationSpan(original.Comparator(), span, 20); err != nil {
+		t.Fatal(err)
+	}
+	if err := trace.Check(original, true); err != nil {
+		t.Fatal(err)
+	}
+	for _, scale := range []float64{.5, 0} {
+		transformed, err := New[time.Duration, testtrace.StringPayload, testtrace.StringPayload, testtrace.StringPayload]().
+			WithSpansScaledBy(nil, scale).TransformTrace(original)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := trace.Check(transformed, true); err != nil {
+			t.Errorf("scale %g: %v", scale, err)
+		}
+	}
+}
