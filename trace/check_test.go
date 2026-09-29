@@ -17,6 +17,8 @@
 package trace
 
 import (
+	"fmt"
+	"slices"
 	"testing"
 	"time"
 )
@@ -170,6 +172,68 @@ func TestCheckDependencyAlsoHasSequentialPredecessor(t *testing.T) {
 		}
 		if err := Check(tr, true); err != nil {
 			t.Errorf("overlapping predecessor and origin (%v): %v", options, err)
+		}
+	}
+}
+
+func TestCheckORContinuationCycle(t *testing.T) {
+	for _, test := range []struct {
+		name              string
+		options           DependencyOption
+		independentOrigin bool
+		blockedSequential bool
+		wantError         bool
+	}{
+		{"OR with independent origin", MultipleOriginsWithOrSemantics, true, false, false},
+		{"OR without independent origin", MultipleOriginsWithOrSemantics, false, false, true},
+		{"OR with blocked sequential predecessor", MultipleOriginsWithOrSemantics, true, true, true},
+		{"AND with independent origin", MultipleOriginsWithAndSemantics, true, false, true},
+	} {
+		for _, reverseRoots := range []bool{false, true} {
+			t.Run(fmt.Sprintf("%s/reverseRoots=%t", test.name, reverseRoots), func(t *testing.T) {
+				tr := NewMutableTrace(DurationComparator, &testNamer{})
+				pre := NewMutableElementarySpan[time.Duration, payload, payload, payload]().WithStart(0).WithEnd(20)
+				join := NewMutableElementarySpan[time.Duration, payload, payload, payload]().WithStart(20).WithEnd(20)
+				child := NewMutableElementarySpan[time.Duration, payload, payload, payload]().WithStart(20).WithEnd(20)
+				independent := NewMutableElementarySpan[time.Duration, payload, payload, payload]().WithStart(0).WithEnd(20)
+				type root struct {
+					name payload
+					es   []MutableElementarySpan[time.Duration, payload, payload, payload]
+				}
+				roots := []root{
+					{"waiter", []MutableElementarySpan[time.Duration, payload, payload, payload]{pre, join}},
+					{"child", []MutableElementarySpan[time.Duration, payload, payload, payload]{child}},
+				}
+				if test.independentOrigin {
+					roots = append(roots, root{"independent", []MutableElementarySpan[time.Duration, payload, payload, payload]{independent}})
+				}
+				if reverseRoots {
+					slices.Reverse(roots)
+				}
+				for _, root := range roots {
+					if _, err := tr.NewMutableRootSpan(root.es, root.name); err != nil {
+						t.Fatal(err)
+					}
+				}
+				wait := tr.NewMutableDependency(FirstUserDefinedDependencyType, test.options).
+					WithOriginElementarySpan(DurationComparator, child).
+					WithDestinationElementarySpan(join)
+				if test.independentOrigin {
+					wait.WithOriginElementarySpan(DurationComparator, independent)
+				}
+				// The child completes as a consequence of the waiter's continuation,
+				// at the same timestamp as the independent completion and join.
+				continuation := tr.NewMutableDependency(FirstUserDefinedDependencyType).
+					WithOriginElementarySpan(DurationComparator, join).
+					WithDestinationElementarySpan(child)
+				if test.blockedSequential {
+					pre.WithStart(20)
+					continuation.WithDestinationElementarySpan(pre)
+				}
+				if err := Check(tr, false); (err != nil) != test.wantError {
+					t.Errorf("Check() = %v, wantError %t", err, test.wantError)
+				}
+			})
 		}
 	}
 }

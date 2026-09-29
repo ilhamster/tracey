@@ -37,6 +37,8 @@ func (ch *checkHelper) error(err error) {
 type esData[T any, CP, SP, DP fmt.Stringer] struct {
 	es           ElementarySpan[T, CP, SP, DP]
 	predecessors map[ElementarySpan[T, CP, SP, DP]]struct{}
+	orSatisfied  bool
+	queued       bool
 }
 
 func (esd *esData[T, CP, SP, DP]) addPred(_ Trace[T, CP, SP, DP], pred ElementarySpan[T, CP, SP, DP]) {
@@ -51,11 +53,26 @@ func (esd *esData[T, CP, SP, DP]) removePred(_ Trace[T, CP, SP, DP], pred Elemen
 		return false
 	}
 	_, ok := esd.predecessors[pred]
+	if dep := esd.es.Incoming(); ok && dep != nil && dep.Options().Includes(MultipleOriginsWithOrSemantics) && pred.Outgoing() == dep {
+		esd.orSatisfied = true
+	}
 	delete(esd.predecessors, pred)
 	if len(esd.predecessors) == 0 {
 		esd.predecessors = nil
 	}
 	return ok
+}
+
+// ready requires the sequential predecessor and either all ordinary incoming
+// origins or one OR origin. Other tied OR origins may depend on this span.
+func (esd *esData[T, CP, SP, DP]) ready() bool {
+	if _, pending := esd.predecessors[esd.es.Predecessor()]; pending {
+		return false
+	}
+	if dep := esd.es.Incoming(); dep != nil && dep.Options().Includes(MultipleOriginsWithOrSemantics) {
+		return esd.orSatisfied
+	}
+	return len(esd.predecessors) == 0
 }
 
 func getESIdxInSpan[T any, CP, SP, DP fmt.Stringer](es ElementarySpan[T, CP, SP, DP]) int {
@@ -98,13 +115,20 @@ func findCycles[T any, CP, SP, DP fmt.Stringer](
 	queue := make([]*esData[T, CP, SP, DP], len(entryESs))
 	for idx, entryES := range entryESs {
 		queue[idx] = getESData(entryES)
+		queue[idx].queued = true
 	}
 	removePred := func(es, pred ElementarySpan[T, CP, SP, DP]) bool {
 		esd := getESData(es)
+		if esd == nil {
+			// Already visited: an OR alternative can be reached after its
+			// destination, without introducing new work or a cycle.
+			return true
+		}
 		if !esd.removePred(t, pred) {
 			return false
 		}
-		if len(esd.predecessors) == 0 {
+		if !esd.queued && esd.ready() {
+			esd.queued = true
 			queue = append(queue, esd)
 		}
 		return true
@@ -135,15 +159,26 @@ func findCycles[T any, CP, SP, DP fmt.Stringer](
 				}
 			}
 		}
-		delete(esDataByES, thisESD.es)
+		if dep := thisESD.es.Incoming(); dep != nil && dep.Options().Includes(MultipleOriginsWithOrSemantics) {
+			// Keep a sentinel so later OR origins cannot rediscover this span.
+			esDataByES[thisESD.es] = nil
+		} else {
+			delete(esDataByES, thisESD.es)
+		}
 	}
-	if len(esDataByES) > 0 {
+	pending := make([]*esData[T, CP, SP, DP], 0)
+	for _, esd := range esDataByES {
+		if esd != nil {
+			pending = append(pending, esd)
+		}
+	}
+	if len(pending) > 0 {
 		errorStrs := []string{"dependency cycle exists among elementary spans:"}
 		outstandingESMap := map[ElementarySpan[T, CP, SP, DP]]struct{}{}
-		for _, esd := range esDataByES {
+		for _, esd := range pending {
 			outstandingESMap[esd.es] = struct{}{}
 		}
-		for _, esd := range esDataByES {
+		for _, esd := range pending {
 			errorStrs = append(
 				errorStrs,
 				fmt.Sprintf("  %s:%d (%v-%v)", t.DefaultNamer().SpanName(esd.es.Span()), getESIdxInSpan(esd.es), esd.es.Start(), esd.es.End()),
